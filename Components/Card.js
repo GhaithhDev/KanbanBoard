@@ -1,6 +1,10 @@
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect } from "react";
 import { StyleSheet, Text, View, TextInput, Pressable } from "react-native";
-import { BoardSessionDataContext } from "../App";
+import { BoardSessionDataContext } from "../Contexts/BoardContext";
+import { FileAxis3D, Snowflake, Trash2 } from "lucide-react-native";
+import { Tag } from "./Tag";
+import { PriorityTag } from "./PriorityTag";
+import { Priority } from "../Enums/priority";
 
 function CreateCard(props) {
   const boardSessionData = useContext(BoardSessionDataContext);
@@ -23,9 +27,9 @@ function CreatingCardInput(props) {
   const boardSessionData = useContext(BoardSessionDataContext);
 
   function OnFinishWriting(finalText) {
-    console.log("finishedWriting " + finalText);
     boardSessionData.boardActions.SetCreatingCardState(props.columnName, false);
-    boardSessionData.boardActions.AddCardTolist(props.columnName, finalText);
+
+    boardSessionData.boardActions.AddCardTolist(props.columnId, finalText);
   }
   return (
     <View style={styles.creatingCard}>
@@ -33,17 +37,45 @@ function CreatingCardInput(props) {
         onSubmitEditing={(e) => OnFinishWriting(e.nativeEvent.text)}
         style={styles.textInput}
         placeholder={"What is the task?"}
-        placeholderTextColor={"#cccccc"}
+        placeholderTextColor={"#3f3e3e60"}
       ></TextInput>
     </View>
   );
 }
 
 export default function Card(props) {
+  const boardSessionData = useContext(BoardSessionDataContext);
+
+  function OpenPreviewCardDetails() {
+    boardSessionData.setPreviewCardData({
+      title: props.name,
+      description: props.description,
+      priority: props.priority,
+      status: props.status,
+      cardId: props.cardId,
+      columnId: props.columnId
+    })
+    boardSessionData.toggleCardDetails();
+  }
+
   return (
-    <View style={styles.card}>
-      <Text style={styles.cardText}>{props.name}</Text>
-    </View>
+    <Pressable style={styles.card} onPress={OpenPreviewCardDetails}>
+      <View style={styles.cardHeader}>
+        <Text numberOfLines={1} style={styles.cardTitle}>
+          {props.name}
+        </Text>
+        <Trash2 color={"red"} size={13}></Trash2>
+      </View>
+
+      {props.description.length > 0 && (
+        <Text numberOfLines={2} style={styles.cardDescription}>
+          {props.description}
+        </Text>
+      )}
+      <View style={[styles.tagsContainer, styles.marginTop]}>
+        <PriorityTag priority={props.priority} />
+      </View>
+    </Pressable>
   );
 }
 
@@ -51,15 +83,46 @@ export { CreateCard, CreatingCardInput };
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "rgb(34,34,34)",
-    height: 50,
+    backgroundColor: "rgb(255, 255, 255)",
+    
     width: "100%",
-    borderRadius: 10,
+    borderRadius: 5,
 
     marginBottom: 5,
 
     justifyContent: "center",
     alignItems: "center",
+  },
+
+  tagsContainer: {
+    width: "90%",
+    flexDirection: "row",
+    marginBottom: 5,
+  },
+  marginTop: {
+    marginTop: 5,
+  },
+
+  cardHeader: {
+    marginTop: 5,
+    marginBottom: 2,
+    flexDirection: "row",
+    width: "90%",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  cardTitle: {
+    color: "black",
+    width: "70%",
+
+    fontSize: 15,
+  },
+
+  cardDescription: {
+    color: "#312f2f6c",
+    width: "90%",
+    fontSize: 12,
   },
 
   createCard: {
@@ -73,21 +136,17 @@ const styles = StyleSheet.create({
     paddingLeft: 10,
   },
 
-  cardText: {
-    color: "white",
-  },
-
   createCardText: {
-    color: "white",
+    color: "black",
     fontSize: 10,
     opacity: 0.5,
   },
 
   creatingCard: {
-    backgroundColor: "rgb(34,34,34)",
+    backgroundColor: "rgb(255, 255, 255)",
     height: 25,
-    width: "100%",
-    borderRadius: 10,
+    width: "85%",
+    borderRadius: 5,
 
     marginBottom: 5,
 
@@ -96,7 +155,7 @@ const styles = StyleSheet.create({
   },
 
   textInput: {
-    color: "white",
+    color: "#3f3e3e",
     width: "75%",
     height: "75%",
     fontSize: 12,

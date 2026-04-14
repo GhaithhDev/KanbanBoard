@@ -1,22 +1,66 @@
-import { createContext, useState, useTransition } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { useState, useEffect } from "react";
+import { StyleSheet, Text, View, Button } from "react-native";
 import Board from "./Components/Board";
 
-export const BoardSessionDataContext = createContext();
+import { BoardApi } from "./ApiRequests/BoardRequests";
+import { CardAPI } from "./ApiRequests/CardRequests";
+import { CardDetails } from "./Components/CardDetails";
+import { BoardSessionDataContext } from "./Contexts/BoardContext";
+import { CreateCardModal } from "./Components/CreateCardModal";
+import { Priority } from "./Enums/priority";
 
 export default function App() {
   const dummyData = [
-    { columnName: "To do", cards: [] },
-    { columnName: "Development", cards: [] },
-    { columnName: "QA", cards: [] },
-    { columnName: "Needs fixes", cards: [] },
-    { columnName: "Production ready", cards: [] },
+    { columnName: "To do", cards: [] ,columnId: "1"},
+    { columnName: "Development", cards: [] ,columnId: "2"},
+    { columnName: "QA", cards: [] ,columnId: "3"},
+    { columnName: "Needs fixes", cards: [] ,columnId: "4"},
+    { columnName: "Production ready", cards: [] ,columnId: "5"},
   ];
 
-  const [columnsData, setColumnsData] = useState(dummyData);
+  const previewCardDummyData = {
+    title: "Card details page",
+    status: "To do",
+    priority: Priority.NORMAL,
+    description: "",
+    cardId: "",
+    columnId: "",
+  };
 
-  function GetCreatingCardsStartData() {
+  async function fetchBoardData() {
+    const boardData = await BoardApi.createBoard({ name: "secondApp" });
+
+    if (!boardData || !boardData["columns"]) {
+      console.error(
+        "backend didn't return valid data, make sure it is started",
+      );
+      return;
+    }
+    setColumnsData(boardData["columns"]);
+    setCreatingCardsData(GetCreatingCardsData());
+  }
+
+  async function updateCardDataFromPreview(updated) {
+    try {
+      const result = await CardAPI.editCard({
+        title: updated.title,
+        cardId: updated.cardId,
+        description: updated.description,
+        priority: updated.priority,
+        columnId: updated.columnId,
+      });
+      console.log(result);
+      if (result && result["columns"]) {
+        setColumnsData(result["columns"]);
+        console.log(columnsData);
+      }
+    } catch (error) {
+      console.warn("request to the card API failed" + error);
+    }
+  }
+  function GetCreatingCardsData() {
     let newCreatingCardsData = {};
+
     for (const columnData of columnsData) {
       const newTable = {
         creatingText: "",
@@ -27,25 +71,26 @@ export default function App() {
     return newCreatingCardsData;
   }
 
-  const [creatingCardsData, setCreatingCardsData] = useState(
-    GetCreatingCardsStartData(),
-  );
-
-  function AddCardTolist(columnName, cardContent) {
-    const newColumnsData = columnsData.map((thisColumnData) => {
-      if (thisColumnData.columnName === columnName) {
-        return {
-          columnName: thisColumnData.columnName,
-          cards: [...thisColumnData.cards, cardContent],
-        };
-      } else {
-        return thisColumnData;
-      }
-    });
-    setColumnsData(newColumnsData);
+  async function AddCardTolist(
+    columnId,
+    cardTitle,
+    cardDescription,
+    cardPriority,
+  ) {
+    try {
+      const result = await CardAPI.createCard({
+        columnId: columnId,
+        title: cardTitle,
+        ...(cardDescription !== undefined && { description: cardDescription }),
+        ...(cardPriority !== undefined && { priority: cardPriority }),
+      });
+      setColumnsData(result["columns"]);
+    } catch (error) {
+      console.warn("request to the card API failed" + error);
+    }
   }
 
-  function SetCreatingCardState(columnName,newState) {
+  function SetCreatingCardState(columnName, newState) {
     const thisColumnCreatingCardsData = creatingCardsData[columnName];
     if (!thisColumnCreatingCardsData) {
       console.warn("invalid column name");
@@ -61,29 +106,74 @@ export default function App() {
     });
   }
 
+  function GetFirstColumnId() {
+    return columnsData[0] && columnsData[0].columnId;
+  }
+
   const boardActions = {
     ["AddCardTolist"]: AddCardTolist,
     ["SetCreatingCardState"]: SetCreatingCardState,
+    ["GetFirstColumnId"]: GetFirstColumnId,
   };
 
+  const [columnsData, setColumnsData] = useState(dummyData);
+
+  const [creatingCardsData, setCreatingCardsData] = useState(
+    GetCreatingCardsData(),
+  );
+
+  const [isCardDetailsVisible, setCardDetailsVisibility] = useState(false);
+  function toggleCardDetails() {
+    setCardDetailsVisibility((prev) => !prev);
+  }
+  const [isCreateModalVisible, setCreateModalVisible] = useState(false);
+  function toggleCreateModal() {
+    setCreateModalVisible((prev) => !prev);
+  }
+
+  const [previewCardData, setPreviewCardData] = useState(previewCardDummyData);
+
+  useEffect(() => {
+    fetchBoardData();
+  }, []);
   return (
-    <View style={styles.Page1}>
-      {/*One board only for now*/}
-      <BoardSessionDataContext.Provider value ={{ boardActions, columnsData, creatingCardsData }} >
-        <Board
-          boardName="Jump for brainrots Board"
-          columns={columnsData}
-          creatingCards={creatingCardsData}
-          boardActions={boardActions}
-        ></Board>
-      </BoardSessionDataContext.Provider>
-    </View>
+    
+      <View style={styles.Page1}>
+        {/*One board only for now*/}
+        <BoardSessionDataContext.Provider
+          value={{
+            boardActions,
+            columnsData,
+            creatingCardsData,
+            toggleCardDetails,
+            toggleCreateModal,
+            previewCardData,
+            setPreviewCardData,
+            updateCardDataFromPreview,
+          }}
+        >
+          <Board
+            boardName="App development"
+            columns={columnsData}
+            creatingCards={creatingCardsData}
+            boardActions={boardActions}
+          ></Board>
+          <CardDetails
+            cardModalVisible={isCardDetailsVisible}
+            closeModal={() => setCardDetailsVisibility(false)}
+          />
+          <CreateCardModal
+            visible={isCreateModalVisible}
+            close={() => setCreateModalVisible(false)}
+          />
+        </BoardSessionDataContext.Provider>
+      </View>
   );
 }
 
 const styles = StyleSheet.create({
   Page1: {
-    backgroundColor: "rgb(30, 29, 29)",
+    backgroundColor: "rgb(255, 255, 255)",
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
