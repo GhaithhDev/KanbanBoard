@@ -1,181 +1,113 @@
-import { useState, useEffect } from "react";
-import { StyleSheet, Text, View, Button } from "react-native";
-import Board from "./Components/Board";
+//ui components
+import { Text } from "react-native";
+import Board from "./ui/screens/Board";
+/*import { CardDetails } from "./ui/components/CardDetails";
+import { CreateCardModal } from "./ui/components/CreateCardModal";*/
+import SignIn from "./ui/screens/SignIn";
+import SignUp from "./ui/screens/SignUp";
+import Loading from "./ui/screens/Loading";
 
-import { BoardApi } from "./ApiRequests/BoardRequests";
-import { CardAPI } from "./ApiRequests/CardRequests";
-import { CardDetails } from "./Components/CardDetails";
-import { BoardSessionDataContext } from "./Contexts/BoardContext";
-import { CreateCardModal } from "./Components/CreateCardModal";
-import { Priority } from "./Enums/priority";
+//packages
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
-export default function App() {
-  const dummyData = [
-    { columnName: "To do", cards: [] ,columnId: "1"},
-    { columnName: "Development", cards: [] ,columnId: "2"},
-    { columnName: "QA", cards: [] ,columnId: "3"},
-    { columnName: "Needs fixes", cards: [] ,columnId: "4"},
-    { columnName: "Production ready", cards: [] ,columnId: "5"},
-  ];
+//enums
+import { ScreenNames } from "./domain/enums/screenNames";
 
-  const previewCardDummyData = {
-    title: "Card details page",
-    status: "To do",
-    priority: Priority.NORMAL,
-    description: "",
-    cardId: "",
-    columnId: "",
-  };
+//context providers
+import { AppContextsProvider } from "./domain/contexts/appContextsProvider";
 
-  async function fetchBoardData() {
-    const boardData = await BoardApi.createBoard({ name: "secondApp" });
+//hooks
+import { useLoading } from "./domain/hooks/loadingHook";
+import { useIsAuthenticated } from "./domain/hooks/isAuthenticatedHook";
+import { useEffect } from "react";
 
-    if (!boardData || !boardData["columns"]) {
-      console.error(
-        "backend didn't return valid data, make sure it is started",
-      );
-      return;
-    }
-    setColumnsData(boardData["columns"]);
-    setCreatingCardsData(GetCreatingCardsData());
-  }
+const stackNavigator = createNativeStackNavigator();
 
-  async function updateCardDataFromPreview(updated) {
-    try {
-      const result = await CardAPI.editCard({
-        title: updated.title,
-        cardId: updated.cardId,
-        description: updated.description,
-        priority: updated.priority,
-        columnId: updated.columnId,
-      });
-      console.log(result);
-      if (result && result["columns"]) {
-        setColumnsData(result["columns"]);
-        console.log(columnsData);
-      }
-    } catch (error) {
-      console.warn("request to the card API failed" + error);
-    }
-  }
-  function GetCreatingCardsData() {
-    let newCreatingCardsData = {};
-
-    for (const columnData of columnsData) {
-      const newTable = {
-        creatingText: "",
-        isCreating: false,
-      };
-      newCreatingCardsData[columnData.columnName] = newTable;
-    }
-    return newCreatingCardsData;
-  }
-
-  async function AddCardTolist(
-    columnId,
-    cardTitle,
-    cardDescription,
-    cardPriority,
-  ) {
-    try {
-      const result = await CardAPI.createCard({
-        columnId: columnId,
-        title: cardTitle,
-        ...(cardDescription !== undefined && { description: cardDescription }),
-        ...(cardPriority !== undefined && { priority: cardPriority }),
-      });
-      setColumnsData(result["columns"]);
-    } catch (error) {
-      console.warn("request to the card API failed" + error);
-    }
-  }
-
-  function SetCreatingCardState(columnName, newState) {
-    const thisColumnCreatingCardsData = creatingCardsData[columnName];
-    if (!thisColumnCreatingCardsData) {
-      console.warn("invalid column name");
-      return;
-    }
-    setCreatingCardsData({
-      ...creatingCardsData,
-      [columnName]: {
-        ...thisColumnCreatingCardsData,
-        creatingText: "", //also need to reset the creating text on toggle
-        isCreating: newState,
-      },
-    });
-  }
-
-  function GetFirstColumnId() {
-    return columnsData[0] && columnsData[0].columnId;
-  }
-
-  const boardActions = {
-    ["AddCardTolist"]: AddCardTolist,
-    ["SetCreatingCardState"]: SetCreatingCardState,
-    ["GetFirstColumnId"]: GetFirstColumnId,
-  };
-
-  const [columnsData, setColumnsData] = useState(dummyData);
-
-  const [creatingCardsData, setCreatingCardsData] = useState(
-    GetCreatingCardsData(),
-  );
-
-  const [isCardDetailsVisible, setCardDetailsVisibility] = useState(false);
-  function toggleCardDetails() {
-    setCardDetailsVisibility((prev) => !prev);
-  }
-  const [isCreateModalVisible, setCreateModalVisible] = useState(false);
-  function toggleCreateModal() {
-    setCreateModalVisible((prev) => !prev);
-  }
-
-  const [previewCardData, setPreviewCardData] = useState(previewCardDummyData);
-
-  useEffect(() => {
-    fetchBoardData();
-  }, []);
+function AuthenticatedNavigator() {
+  console.log("loading App.js/AuthenticatedNavigator");
   return (
-    
-      <View style={styles.Page1}>
-        {/*One board only for now*/}
-        <BoardSessionDataContext.Provider
-          value={{
-            boardActions,
-            columnsData,
-            creatingCardsData,
-            toggleCardDetails,
-            toggleCreateModal,
-            previewCardData,
-            setPreviewCardData,
-            updateCardDataFromPreview,
-          }}
-        >
-          <Board
-            boardName="App development"
-            columns={columnsData}
-            creatingCards={creatingCardsData}
-            boardActions={boardActions}
-          ></Board>
-          <CardDetails
-            cardModalVisible={isCardDetailsVisible}
-            closeModal={() => setCardDetailsVisibility(false)}
-          />
-          <CreateCardModal
-            visible={isCreateModalVisible}
-            close={() => setCreateModalVisible(false)}
-          />
-        </BoardSessionDataContext.Provider>
-      </View>
+    <stackNavigator.Navigator>
+      <stackNavigator.Screen
+        name={ScreenNames.Board}
+        component={Board}
+        options={{
+          headerShown: false,
+        }}
+      />
+    </stackNavigator.Navigator>
   );
 }
 
-const styles = StyleSheet.create({
-  Page1: {
-    backgroundColor: "rgb(255, 255, 255)",
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});
+function AuthNavigator() {
+   console.log("loading App.js/AuthNavigator");
+  return (
+    <stackNavigator.Navigator>
+      <stackNavigator.Screen name={ScreenNames.SignIn} component={SignIn} />
+      <stackNavigator.Screen name={ScreenNames.SignUp} component={SignUp} />
+    </stackNavigator.Navigator>
+  );
+}
+
+function Navigation() {
+  console.log("loading App.js/Navigation");
+  const isAuthenticated = useIsAuthenticated();
+  
+  return (
+    <NavigationContainer>
+      {isAuthenticated ? <AuthenticatedNavigator /> : <AuthNavigator />}
+      
+    </NavigationContainer>
+  );
+}
+
+function AppUI() {
+  console.log("loading App.js/AppUI");
+  const { isLoading, loadingMessage } = useLoading();
+  
+  return (
+    <>
+      <Navigation></Navigation>
+      {isLoading && <Loading text={loadingMessage} />}
+    </>
+  );
+}
+
+export default function App() {
+  console.log("app start");
+
+  /*const [isCardDetailsVisible, setCardDetailsVisibility] = useState(false);
+  function toggleCardDetails() {
+    setCardDetailsVisibility((prev) => !prev);
+  }
+    const [previewCardData, setPreviewCardData] = useState(previewCardDummyData);
+  */ //move to cardDetailsHook
+
+  /*const [isCreateModalVisible, setCreateModalVisible] = useState(false);
+  function toggleCreateModal() {
+    setCreateModalVisible((prev) => !prev);
+  }*/ //move to create card modal hook
+
+  /*useEffect(() => {
+    if (hasInitted.current) return;
+    hasInitted.current = true;
+
+    async function run() {
+      await init();
+      isReady.current = true;
+    }
+
+    run();
+
+  }, []);*/
+
+  /*if (!isReady) {
+    return <Loading text={"App is loading.."} />;
+  }*/
+
+  return (
+    <AppContextsProvider>
+      <AppUI />
+    </AppContextsProvider>
+  );
+}

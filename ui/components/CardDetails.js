@@ -10,14 +10,14 @@ import {
 } from "react-native";
 import { X } from "lucide-react-native/icons";
 import { InputField } from "./InputField";
-import { priorityOptions } from "../Consts/priorityOptions";
+import { priorityOptions } from "../../domain/consts/priorityOptions";
 import { useState, useContext, useRef } from "react";
-import { Priority } from "../Enums/priority";
-import { BoardSessionDataContext } from "../Contexts/BoardContext";
+import { Priority } from "../../domain/enums/priority";
+import { BoardSessionDataContext } from "../../domain/contexts/boardContext";
 import { Dropdown } from "react-native-element-dropdown";
 import { AddButton } from "./AddButton";
 import { PriorityTag } from "./PriorityTag";
-import Board from "./Board";
+import Board from "../screens/Board";
 
 export function CardDetails(props) {
   const boardSessionData = useContext(BoardSessionDataContext);

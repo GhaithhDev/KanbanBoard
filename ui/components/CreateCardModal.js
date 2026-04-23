@@ -1,4 +1,4 @@
-import {
+/*import {
   Modal,
   View,
   StyleSheet,
@@ -11,20 +11,17 @@ import {
 import { X } from "lucide-react-native/icons";
 import { InputField } from "./InputField";
 import { Dropdown } from "react-native-element-dropdown";
-import { Priority } from "../Enums/priority";
+import { Priority } from "../../domain/enums/priority";
 import { useState, useContext } from "react";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import { AddButton } from "./AddButton";
-import {BoardSessionDataContext} from '../Contexts/BoardContext'
 import { Keyboard } from "react-native";
 
-import { priorityOptions } from "../Consts/priorityOptions";
+import { priorityOptions } from "../../domain/consts/priorityOptions";
 
 export function CreateCardModal(props) {
   const [enteredTitle, setEnteredTitle] = useState("");
   const [enteredDescription, setEnteredDescription] = useState("");
   const [selectedPriority, setSelectedPriority] = useState(Priority.NORMAL);
-  const BoardSessionData = useContext(BoardSessionDataContext);
 
   function Submit() {
     
@@ -36,8 +33,8 @@ export function CreateCardModal(props) {
       ]);
       return;
     }
-
-    BoardSessionData.boardActions.AddCardTolist(BoardSessionData.boardActions.GetFirstColumnId(),enteredTitle,enteredDescription,selectedPriority);
+    //props.getFristColumnId(),enteredTitle,enteredDescription,selectedPriority
+    //BoardSessionData.boardActions.AddCardTolist();
     setEnteredTitle('');
     setEnteredDescription('');
     setSelectedPriority(Priority.NORMAL)
@@ -183,3 +180,4 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 });
+*/

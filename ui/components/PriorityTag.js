@@ -1,5 +1,5 @@
 import { Tag } from "./Tag";
-import { Priority } from "../Enums/priority";
+import { Priority } from "../../domain/enums/priority";
 
 export function PriorityTag(props) {
   const priorityColors = {

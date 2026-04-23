@@ -1,50 +1,14 @@
-import { useContext, useState, useEffect } from "react";
 import { StyleSheet, Text, View, TextInput, Pressable } from "react-native";
-import { BoardSessionDataContext } from "../Contexts/BoardContext";
-import { FileAxis3D, Snowflake, Trash2 } from "lucide-react-native";
-import { Tag } from "./Tag";
+
+import { Trash2 } from "lucide-react-native";
 import { PriorityTag } from "./PriorityTag";
-import { Priority } from "../Enums/priority";
 
-function CreateCard(props) {
-  const boardSessionData = useContext(BoardSessionDataContext);
 
-  function OnCreateCardButtonPressed() {
-    boardSessionData.boardActions.SetCreatingCardState(props.columnName, true);
-  }
 
-  return (
-    <Pressable
-      style={styles.createCard}
-      onPress={() => OnCreateCardButtonPressed()}
-    >
-      <Text style={styles.createCardText}> + Create</Text>
-    </Pressable>
-  );
-}
 
-function CreatingCardInput(props) {
-  const boardSessionData = useContext(BoardSessionDataContext);
-
-  function OnFinishWriting(finalText) {
-    boardSessionData.boardActions.SetCreatingCardState(props.columnName, false);
-
-    boardSessionData.boardActions.AddCardTolist(props.columnId, finalText);
-  }
-  return (
-    <View style={styles.creatingCard}>
-      <TextInput
-        onSubmitEditing={(e) => OnFinishWriting(e.nativeEvent.text)}
-        style={styles.textInput}
-        placeholder={"What is the task?"}
-        placeholderTextColor={"#3f3e3e60"}
-      ></TextInput>
-    </View>
-  );
-}
 
 export default function Card(props) {
-  const boardSessionData = useContext(BoardSessionDataContext);
+  /*const boardSessionData = useContext(BoardSessionDataContext);
 
   function OpenPreviewCardDetails() {
     boardSessionData.setPreviewCardData({
@@ -56,18 +20,18 @@ export default function Card(props) {
       columnId: props.columnId
     })
     boardSessionData.toggleCardDetails();
-  }
+  }*/
 
   return (
-    <Pressable style={styles.card} onPress={OpenPreviewCardDetails}>
+    <Pressable style={styles.card} /*onPress={OpenPreviewCardDetails}*/>
       <View style={styles.cardHeader}>
         <Text numberOfLines={1} style={styles.cardTitle}>
           {props.name}
         </Text>
-        <Trash2 color={"red"} size={13}></Trash2>
+        <Trash2 color={"red"} size={17} onPress={() => props.deleteCard(props.cardId)}></Trash2>
       </View>
 
-      {props.description.length > 0 && (
+      {props.description?.length > 0 && (
         <Text numberOfLines={2} style={styles.cardDescription}>
           {props.description}
         </Text>
@@ -79,12 +43,11 @@ export default function Card(props) {
   );
 }
 
-export { CreateCard, CreatingCardInput };
 
 const styles = StyleSheet.create({
   card: {
     backgroundColor: "rgb(255, 255, 255)",
-    
+
     width: "100%",
     borderRadius: 5,
 

@@ -1,4 +1,4 @@
-import { Priority } from "../Enums/priority";
+import { Priority } from "../enums/priority";
 
 export const priorityOptions = [
   { label: Priority.LOW, value: Priority.LOW },
