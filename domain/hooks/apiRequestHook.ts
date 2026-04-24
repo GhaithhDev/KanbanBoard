@@ -1,5 +1,8 @@
+import { useContext } from "react";
 import { FetchRequestTypes } from "../enums/fetchRequestTypes";
+import useAuth from "./authHook";
 import { useLoading } from "./loadingHook";
+import { AuthContext } from "../contexts/authContext";
 
 type apiRequestUsage = {
   sendApiRequest: (
@@ -16,6 +19,7 @@ const SERVER_URL = "http://172.20.10.3:3000";
 
 export function useApiRequest() {
   const { setLoading } = useLoading();
+  const { token } = useContext(AuthContext);
 
   async function sendApiRequest(
     endPoint: string,
@@ -32,9 +36,13 @@ export function useApiRequest() {
       }
       const result = await fetch(SERVER_URL + endPoint, {
         method: requestType,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+         ...(token && {"Authorization": `Bearer ${token}`}),
+        },
         body: requestData && JSON.stringify(requestData),
       });
+      //where do I put the token (backend is looking for it as a bearer toekn)
       if (
         result.status === 204 ||
         result.headers.get("content-length") === "0"
@@ -46,7 +54,13 @@ export function useApiRequest() {
         return result.text();
       }
 
-      return result.json();
+      const data = await result.json();
+
+      if (!result.ok) {
+        throw data;
+      }
+
+      return data;
     } catch (error) {
       throw error;
     } finally {

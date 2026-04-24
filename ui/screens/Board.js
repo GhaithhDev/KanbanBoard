@@ -1,172 +1,207 @@
 import { useEffect } from "react";
-import { StyleSheet, Text, View, Modal, FlatList } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  FlatList,
+  SafeAreaView,
+  TouchableOpacity,
+} from "react-native";
 import BoardColumn from "../components/BoardColumn";
-
-import * as ScreenOrientation from "expo-screen-orientation";
 import { useBoard } from "../../domain/hooks/boardHook";
-
 import { CreatingInput, CreateButton } from "../components/CreateComponents";
+import { useRoute, useNavigation } from "@react-navigation/native";
 
 function CreateColumnSection({
   isCreating,
   setIsCreating,
   onCreateButtonPressed,
   boardId,
-  createColumn
+  createColumn,
 }) {
   function onSubmit(writtenText) {
     setIsCreating(false);
-    createColumn(writtenText,boardId);
+    createColumn(writtenText, boardId);
   }
 
   if (isCreating) {
     return (
-      <CreatingInput placeHolder="What is the list name?" submit={onSubmit} />
+      <View style={styles.createColumnWrapper}>
+        <CreatingInput placeHolder="What is the list name?" submit={onSubmit} />
+      </View>
     );
   }
-  console.log(onCreateButtonPressed);
+
   return <CreateButton creatingItem="list" onCreatePressed = {onCreateButtonPressed} />;
 }
 
-export default function Board({ route }) {
-  console.log("loading screens/Board");
-  const { isReady, title, columnIds, setIsCreating, isCreating, createColumn, deleteColumn } = useBoard(
-    "4d5a9c09-b32a-4ca4-99c0-097872ae4412",
-  ); //TODO: get board id from route  static for now (create board feature not done yet)
+export default function Board() {
+  const route = useRoute();
+  const id = route.params.boardId;
+  const navigation = useNavigation();
 
-  // console.log(title,columnIds);
-  //get an array of columns from board id
+  const {
+    isReady,
+    title,
+    columnIds,
+    setIsCreating,
+    isCreating,
+    createColumn,
+    deleteColumn,
+    boardId,
+    init,
+  } = useBoard(id);
+
+  useEffect(() => {
+    init();
+  }, [boardId]);
 
   function RenderColumn({ item }) {
-    return <BoardColumn key={item} columnId={item} deleteColumn = {deleteColumn} ></BoardColumn>;
+    return (
+      <BoardColumn key={item} columnId={item} deleteColumn={deleteColumn} />
+    );
   }
 
-  function closeCreatingModal() {
-    setIsCreating(false);
-  }
-
-  function toggleCreatingModal() {
-    setIsCreating((prev) => !prev);
-  }
-
-  function onCreateButtonPressed(){
-    console.log("pressed")
+  function onCreateButtonPressed() {
     setIsCreating(true);
   }
 
-  
-
-  useEffect(() => {
-    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
-
-    return () => {
-      ScreenOrientation.unlockAsync();
-    };
-  }, []);
-
   if (!isReady) {
-    // if its ready then it is already loading
-    return;
+    return null;
   }
-  return (
-    <>
-      <View style={styles.Page}>
-        <View style={styles.kanbanBoard}>
-          <View style={styles.boardHeader}>
-            <View style={styles.headerLeft}>
-              <Text style={styles.boardTitle}>{title}</Text>
-              <Text style={styles.kanbanBoardText}>
-                tracking the tasks of the kanbanboard development
-              </Text>
-            </View>
-            <View style={styles.headerRight}>
-              {/*<AddButton
-              itemName={"Card"}
-              onPress={toggleCreatingModal}
-            ></AddButton>*/}
-            </View>
-          </View>
 
-          <View style={styles.downArea}>
-            <FlatList
-              data={columnIds}
-              renderItem={RenderColumn}
-              keyExtractor={(item) => item}
-              bounces={false} // iOS
-              overScrollMode="never" // Android
-              style={styles.columnsContainer}
-              horizontal={true}
-              contentContainerStyle={{ alignItems: "flex-start" }}
-              ListFooterComponent={
-                <CreateColumnSection
-                  isCreating={isCreating}
-                  setIsCreating={setIsCreating}
-                  onCreateButtonPressed={onCreateButtonPressed}
-                  createColumn = {createColumn}
-                  boardId="4d5a9c09-b32a-4ca4-99c0-097872ae4412"
-                />
-              }
-            ></FlatList>
-          </View>
-        </View>
+  return (
+    <SafeAreaView style={styles.safe}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          activeOpacity={0.7}
+          onPress={() => navigation.goBack()}
+        >
+          <View style={styles.chevronLeft} />
+          <Text style={styles.backText}>My Boards</Text>
+        </TouchableOpacity>
+        <Text style={styles.boardTitle}>{title}</Text>
       </View>
-    </>
+
+      {/* Columns */}
+      <View style={styles.columnsArea}>
+        <FlatList
+          data={columnIds}
+          renderItem={RenderColumn}
+          keyExtractor={(item) => item}
+          bounces={false}
+          overScrollMode="never"
+          horizontal={true}
+          contentContainerStyle={styles.columnsList}
+          showsHorizontalScrollIndicator={false}
+          ListFooterComponent={
+            <CreateColumnSection
+              isCreating={isCreating}
+              setIsCreating={setIsCreating}
+              onCreateButtonPressed={onCreateButtonPressed}
+              createColumn={createColumn}
+              boardId={boardId}
+            />
+          }
+        />
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  Page: {
-    backgroundColor: "rgb(255, 255, 255)",
+  safe: {
     flex: 1,
-    alignItems: "flex-start",
-    justifyContent: "center",
-  },
-  kanbanBoard: {
-    width: "96%",
-    height: "90%",
-    backgroundColor: "rgb(255, 255, 255)",
-    alignItems: "center",
-    justifyContent: "center",
-    //backgroundColor: "#bd0000",
+    backgroundColor: "#F3F4F6",
   },
 
-  boardTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-  },
-
-  kanbanBoardText: {
-    maxWidth: 250,
-    fontSize: 12,
-  },
-
-  headerLeft: {
-    justifyContent: "space-between",
-  },
-
-  boardHeader: {
-    flex: 2.5,
-    width: "95%",
-
-    marginBottom: 25,
+  // ── Header ──
+  header: {
+    flexDirection: "column",
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 16,
+    //backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
-    borderBottomColor: "rgb(56, 55, 55)",
-    //backgroundColor: "#00ff73",
+    borderBottomColor: "#E5E7EB",
+  },
+  backButton: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 5,
+    alignSelf: "flex-start",
+    paddingVertical: 4,
+    marginBottom: 10,
+  },
+  chevronLeft: {
+    width: 7,
+    height: 7,
+    borderLeftWidth: 2,
+    borderBottomWidth: 2,
+    borderColor: "#2563EB",
+    transform: [{ rotate: "45deg" }],
+  },
+  backText: {
+    fontSize: 13,
+    color: "#2563EB",
+    fontWeight: "600",
+  },
+  boardTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#111827",
+  },
+
+  // ── Columns area ──
+  columnsArea: {
+    flex: 1,
+    paddingTop: 16,
+  },
+  columnsList: {
+    paddingHorizontal: 16,
+    alignItems: "flex-start",
+    paddingBottom: 16,
+  },
+
+  // ── Add list inline card ──
+  createColumnWrapper: {
+    marginLeft: 8,
+  },
+  addListButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    width: 180,
+    gap: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  plusIcon: {
+    width: 18,
+    height: 18,
+    position: "relative",
+    justifyContent: "center",
     alignItems: "center",
   },
-  downArea: {
-    flex: 9,
-
-    width: "95%",
-    justifyContent: "center",
-    //backgroundColor: "#006eff",
-    alignItems: "stretch",
+  plusH: {
+    position: "absolute",
+    width: 14,
+    height: 2,
+    backgroundColor: "#2563EB",
+    borderRadius: 1,
   },
-
-  columnsContainer: {
-    flexDirection: "row",
-    height: "100%",
+  plusV: {
+    position: "absolute",
+    width: 2,
+    height: 14,
+    backgroundColor: "#2563EB",
+    borderRadius: 1,
   },
 });

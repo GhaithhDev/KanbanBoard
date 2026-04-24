@@ -1,5 +1,19 @@
 import { Plus } from "lucide-react-native";
-import { StyleSheet, Pressable, Text, View, TextInput } from "react-native";
+import {
+  StyleSheet,
+  Pressable,
+  Text,
+  View,
+  TextInput,
+  Dimensions,
+} from "react-native";
+
+function isHorizontal() {
+  const dimentions = Dimensions.get("window");
+  const isHorizontal = dimentions.width / dimentions.height > 1;
+  console.log(isHorizontal);
+  return isHorizontal;
+}
 
 export function CreatingInput(props) {
   function OnFinishWriting(finalText) {
@@ -8,7 +22,12 @@ export function CreatingInput(props) {
 
   return (
     <View
-      style={[styles.contianer, !props.excludeBackground && styles.background,!props.excludeBorder && styles.border]}
+      style={[
+        styles.contianer,
+        !props.excludeBackground && styles.background,
+        !props.excludeBorder && styles.border,
+        !props.excludeMargin && (isHorizontal() ? styles.horizontalMargin : styles.verticalMargin)
+      ]}
     >
       <TextInput
         onSubmitEditing={(e) => OnFinishWriting(e.nativeEvent.text)}
@@ -23,7 +42,12 @@ export function CreatingInput(props) {
 export function CreateButton(props) {
   return (
     <Pressable
-      style={[styles.contianer, !props.excludeBackground && styles.background, !props.excludeBorder && styles.border]}
+      style={[
+        styles.contianer,
+        !props.excludeBackground && styles.background,
+        !props.excludeBorder && styles.border,
+        !props.excludeMargin && (isHorizontal() ? styles.horizontalMargin : styles.verticalMargin)
+      ]}
       onPress={props.onCreatePressed}
     >
       <Plus size={15} style={{ marginLeft: 10 }}></Plus>
@@ -44,8 +68,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  border: {
+  horizontalMargin: {
     marginTop: 25,
+  },
+
+  verticalMargin: {
+    marginTop: 64,
+  },
+
+  border: {
     borderColor: "#cccccc",
     borderWidth: 1.5,
     borderStyle: "dashed",

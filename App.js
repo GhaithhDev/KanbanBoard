@@ -21,6 +21,7 @@ import { AppContextsProvider } from "./domain/contexts/appContextsProvider";
 import { useLoading } from "./domain/hooks/loadingHook";
 import { useIsAuthenticated } from "./domain/hooks/isAuthenticatedHook";
 import { useEffect } from "react";
+import BoardsScreen from "./ui/screens/BoardScreen";
 
 const stackNavigator = createNativeStackNavigator();
 
@@ -28,6 +29,13 @@ function AuthenticatedNavigator() {
   console.log("loading App.js/AuthenticatedNavigator");
   return (
     <stackNavigator.Navigator>
+      <stackNavigator.Screen
+        name={ScreenNames.BoardsContainer}
+        component={BoardsScreen}
+         options={{
+          headerShown: false,
+        }}
+      />
       <stackNavigator.Screen
         name={ScreenNames.Board}
         component={Board}

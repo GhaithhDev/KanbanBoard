@@ -21,7 +21,7 @@ function CreateCardSection({
   }
 
   if (isCreating) {
-    return <CreatingInput placeHolder="What is the task?" submit={onSubmit}  excludeBorder={true}/>;
+    return <CreatingInput placeHolder="What is the task?" submit={onSubmit}  excludeBorder={true} excludeMargin ={true}/> ;
   }
   return (
     <CreateButton
@@ -29,6 +29,7 @@ function CreateCardSection({
       excludeBorder={true}
       creatingItem="Card"
       onCreatePressed={onCreateCardButtonPressed}
+      excludeMargin ={true}
     />
   );
 }

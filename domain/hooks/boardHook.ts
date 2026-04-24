@@ -22,20 +22,23 @@ type boardUsage = {
   columnIds: string[];
   isReady: boolean;
   isCreating: boolean;
+  boardId: string | undefined;
   setTitle: (newTitle: string) => void;
   setColumns: (newColumnIds: string[]) => void;
   setReady: (newState: boolean) => void;
   setIsCreating: (newState: boolean) => void;
-  createColumn: (columnName: string, boardId: string ) => void;
-  deleteColumn: (columnId: string) => void
+  createColumn: (columnName: string, boardId: string) => void;
+  deleteColumn: (columnId: string) => void;
+  init: () => void;
 };
 
-export function useBoard(boardId: string) {
+export function useBoard(receviedBoardId: string) {
   const { sendApiRequest } = useApiRequest();
   const [title, setTitle] = useState<string>("");
   const [columnIds, setColumns] = useState<string[]>([]);
   const [isReady, setReady] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [boardId, setBoardId] = useState<string | undefined>();
 
   async function createColumn(columnName: string, boardId: string) {
     try {
@@ -71,7 +74,7 @@ export function useBoard(boardId: string) {
   async function init() {
     try {
       const result = await sendApiRequest(
-        API_CALLS.getBoardById.endpoint + "/" + boardId,
+        API_CALLS.getBoardById.endpoint + "/" + receviedBoardId,
         API_CALLS.getBoardById.requestType,
         null,
         "Loading board...",
@@ -79,26 +82,26 @@ export function useBoard(boardId: string) {
 
       setTitle(result.name);
       setColumns(result.columnIds);
+      setBoardId(receviedBoardId);
       setReady(true);
     } catch (error) {
       console.error(`failed to retrieve data for board with id: ${boardId} `);
     }
   }
 
-  useEffect(() => {
-    init();
-  }, [boardId]);
-
   return {
     title,
     columnIds,
     isReady,
     isCreating,
+    boardId,
     setTitle,
     setColumns,
     setReady,
     setIsCreating,
     createColumn,
-    deleteColumn
+    deleteColumn,
+
+    init,
   } satisfies boardUsage;
 }

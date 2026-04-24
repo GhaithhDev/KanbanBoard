@@ -10,7 +10,7 @@ import {
 import useAuth from "../../domain/hooks/authHook";
 
 export default function SignIn() {
-  const { navigateToSignUpPage } = useAuth();
+  const { navigateToSignUpPage, signIn, writingUsername, setWritingUsername, writingPassword, setWritingPassword } = useAuth();
 
   return (
     <View style={styles.container}>
@@ -29,12 +29,14 @@ export default function SignIn() {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Sign In</Text>
 
-        {/* Email */}
-        <Text style={styles.label}>Email Address</Text>
+        {/* username */}
+        <Text style={styles.label}>username</Text>
         <TextInput
-          placeholder="you@example.com"
+          placeholder="Voranox"
           placeholderTextColor="#9CA3AF"
           style={styles.input}
+          value = {writingUsername}
+          onChangeText={(newText) => setWritingUsername(newText)}
         />
 
         {/* Password */}
@@ -44,6 +46,8 @@ export default function SignIn() {
           placeholderTextColor="#9CA3AF"
           secureTextEntry
           style={styles.input}
+          value = {writingPassword}
+          onChangeText={(newText) => setWritingPassword(newText)}
         />
 
         {/* Row */}
@@ -57,7 +61,7 @@ export default function SignIn() {
         </View>
 
         {/* Button */}
-        <TouchableOpacity style={styles.button}>
+        <TouchableOpacity style={styles.button} onPress={signIn}>
           <Text style={styles.buttonText}>Sign In</Text>
         </TouchableOpacity>
 
