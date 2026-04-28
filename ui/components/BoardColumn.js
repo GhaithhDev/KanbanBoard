@@ -1,27 +1,28 @@
 import { StyleSheet, Text, View, FlatList } from "react-native";
 import Card from "./Card";
 import { CreateButton, CreatingInput } from "./CreateComponents";
-import { useColumn } from "../../domain/hooks/columnHook";
 import { Trash2 } from "lucide-react-native/icons";
+import { useCard } from "../../domain/hooks/cardHook";
+import { useEffect } from "react";
 
 function CreateCardSection({
   isCreating,
-  columnId,
-  setIsCreating,
-  createCard,
+  submitCreateCard,
   onCreateCardButtonPressed,
 }) {
   function onSubmit(writtenText) {
-    setIsCreating(false);
-
-    createCard({
-      title: writtenText,
-      parentColumnId: columnId,
-    });
+    submitCreateCard(writtenText);
   }
 
   if (isCreating) {
-    return <CreatingInput placeHolder="What is the task?" submit={onSubmit}  excludeBorder={true} excludeMargin ={true}/> ;
+    return (
+      <CreatingInput
+        placeHolder="What is the task?"
+        submit={onSubmit}
+        excludeBorder={true}
+        excludeMargin={true}
+      />
+    );
   }
   return (
     <CreateButton
@@ -29,54 +30,47 @@ function CreateCardSection({
       excludeBorder={true}
       creatingItem="Card"
       onCreatePressed={onCreateCardButtonPressed}
-      excludeMargin ={true}
+      excludeMargin={true}
     />
   );
 }
 
-export default function BoardColumn(props) {
+export default function BoardColumn({
+  boardId,
+  column,
+  setColumnCreating,
+  deleteColumn,
+}) {
   console.log("Loading components/BoardColumn");
-  const { columnId } = props;
-  const {
-    title,
-    isCreating,
-    cards,
-    setIsCreating,
-    isReady,
-    createCard,
-    deleteCard,
-  } = useColumn(props.columnId);
-  //console.log("got its hook data",title,cards);
-
-  if (!isReady) {
-    return;
-  }
+  const { getColumnCards, deleteCard, createCard } = useCard();
+  const cards = getColumnCards(column.id);
 
   function onCreateCardButtonPressed() {
-    setIsCreating(true);
+    setColumnCreating(column.id, true);
   }
 
   function RenderCard({ item }) {
-    return (
-      <Card
-        key={item.id}
-        cardId={item.id}
-        name={item.title}
-        description={item.description}
-        priority={item.priority}
-        status={props.columnName}
-        columnId={props.columnId}
-        deleteCard={deleteCard}
-      ></Card>
-    );
+    return <Card key={item.id} card={item} deleteCard={deleteCard}></Card>;
+  }
+
+  function submitCreateCard(writtenText) {
+    createCard({
+      title: writtenText,
+      parentColumnId: column.id,
+      boardId: boardId
+    });
+
+    setColumnCreating(column.id, false);
   }
 
   return (
     <View style={styles.column}>
       <View style={styles.columnHeaderContainer}>
         <View style={styles.columnHeader}>
-          <Text style={styles.columnTitle}>{title}  ({cards.length})</Text>
-          <Trash2 size = {17} onPress={() => props.deleteColumn(props.columnId)}/>
+          <Text style={styles.columnTitle}>
+            {column.title} ({cards.length})
+          </Text>
+          <Trash2 size={17} onPress={() => deleteColumn(column.id)} />
         </View>
       </View>
       <View style={styles.columnContent}>
@@ -86,11 +80,9 @@ export default function BoardColumn(props) {
             renderItem={RenderCard}
             ListFooterComponent={
               <CreateCardSection
-                createCard={createCard}
-                isCreating={isCreating}
-                columnId={columnId}
-                setIsCreating={setIsCreating}
+                isCreating={column.isCreating}
                 onCreateCardButtonPressed={onCreateCardButtonPressed}
+                submitCreateCard={submitCreateCard}
               />
             }
           ></FlatList>
@@ -138,6 +130,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderStyle: "dashed",
     borderRadius: 8,
+    
 
     justifyContent: "center",
     alignItems: "center",

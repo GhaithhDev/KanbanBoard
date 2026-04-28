@@ -10,8 +10,9 @@ import {
 
 
 import { BOARD_COLORS } from "../../domain/consts/boardColors";
+import { getColorFromNum } from "../../domain/utils/getColorFromNum";
 
-export default function CreateBoardModal({ visible, onClose }) {
+export default function CreateBoardModal({ visible, onClose, creatingBoardName, creatingBoardColorNum, setCreatingBoardName, setCreateingBoardColorNum, createBoard}) {
   return (
     <Modal
       visible={visible}
@@ -49,25 +50,28 @@ export default function CreateBoardModal({ visible, onClose }) {
           {/* Board Name Input */}
           <Text style={styles.label}>Board Name</Text>
           <TextInput
-            placeholder="e.g. Sprint Planning, Marketing Q3…"
+            value = {creatingBoardName}
+            placeholder="What's the project?"
             placeholderTextColor="#9CA3AF"
             style={styles.input}
+            onChangeText={(text) => setCreatingBoardName(text)}
           />
 
           {/* Color Picker */}
           <Text style={styles.label}>Board Color</Text>
           <View style={styles.colorRow}>
-            {BOARD_COLORS.map((c, i) => (
+            {BOARD_COLORS.map((c) => (
               <TouchableOpacity
                 key={c.id}
                 style={[
                   styles.colorSwatch,
                   { backgroundColor: c.hex },
-                  i === 0 && styles.colorSwatchSelected,
+                  c.id === creatingBoardColorNum && styles.colorSwatchSelected,
                 ]}
                 activeOpacity={0.8}
+                onPress={ () => setCreateingBoardColorNum(c.id) }
               >
-                {i === 0 && <View style={styles.colorCheck} />}
+                {c.id === creatingBoardColorNum && <View style={styles.colorCheck} />}
               </TouchableOpacity>
             ))}
           </View>
@@ -75,20 +79,20 @@ export default function CreateBoardModal({ visible, onClose }) {
           {/* Preview */}
           <View style={styles.previewBox}>
             <View
-              style={[styles.previewStrip, { backgroundColor: "#2563EB" }]}
+              style={[styles.previewStrip, { backgroundColor: getColorFromNum(parseInt(creatingBoardColorNum)) }]}
             />
             <View style={styles.previewBody}>
               <View
-                style={[styles.previewIcon, { backgroundColor: "#2563EB18" }]}
+                style={[styles.previewIcon, { backgroundColor: getColorFromNum(parseInt(creatingBoardColorNum)) + "18" }]}
               >
                 <View
                   style={[
                     styles.previewIconInner,
-                    { backgroundColor: "#2563EB" },
+                    { backgroundColor: getColorFromNum(parseInt(creatingBoardColorNum)) },
                   ]}
                 />
               </View>
-              <Text style={styles.previewTitle}>Board Name</Text>
+              <Text style={styles.previewTitle}>{creatingBoardName}</Text>
               <View style={styles.previewMeta}>
                 <View style={styles.metaPill}>
                   <Text style={styles.metaText}>0 columns</Text>
@@ -106,7 +110,7 @@ export default function CreateBoardModal({ visible, onClose }) {
             <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
               <Text style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.createButton}>
+            <TouchableOpacity style={styles.createButton} onPress={createBoard} >
               <Text style={styles.createText}>Create Board</Text>
             </TouchableOpacity>
           </View>
@@ -118,6 +122,7 @@ export default function CreateBoardModal({ visible, onClose }) {
 
 const styles = StyleSheet.create({
   overlay: {
+    ...StyleSheet.absoluteFillObject,
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.4)",
     justifyContent: "center",

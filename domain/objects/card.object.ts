@@ -6,4 +6,5 @@ export class Card {
     description!: string;
     priority!: Priority;
     parentColumnId!: string;
+    externalWorker!: string;
 }

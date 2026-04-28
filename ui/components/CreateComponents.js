@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
   },
 
   verticalMargin: {
-    marginTop: 64,
+    marginTop: 70,
   },
 
   border: {

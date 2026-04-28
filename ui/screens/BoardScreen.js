@@ -11,6 +11,7 @@ import useAuth from "../../domain/hooks/authHook";
 import { useBoardsContainer } from "../../domain/hooks/boardsContainerHook";
 import { BOARD_COLORS } from "../../domain/consts/boardColors";
 import { getColorFromNum } from "../../domain/utils/getColorFromNum";
+import CreateBoardModal from "../components/CreateBoardModal";
 
 const yourBoards = [
   {
@@ -24,8 +25,8 @@ const yourBoards = [
   { id: "3", title: "Marketing Q3", columns: 5, tasks: 24, color: "#0891B2" },
 ];
 
-const sharedBoards = [
-  /*{
+/*const sharedBoards = [
+  {
     id: "4",
     title: "Design System",
     columns: 3,
@@ -40,27 +41,25 @@ const sharedBoards = [
     tasks: 7,
     color: "#DC2626",
     owner: "Alex K.",
-  },*/
+  },
 ];
-
-function BoardCard({ board, shared, navigateToBoard}) {
-
-  console.log(board);
+*/
+function BoardCard({ board, shared, navigateToBoard }) {
   const color = getColorFromNum(board.colorNum);
   return (
-    <TouchableOpacity style={styles.boardCard} activeOpacity={0.75} onPress={() => navigateToBoard(board.boardId)}>
+    <TouchableOpacity
+      style={styles.boardCard}
+      activeOpacity={0.75}
+      onPress={() => navigateToBoard(board.boardId)}
+    >
       {/* Color accent strip */}
       <View style={[styles.cardStrip, { backgroundColor: color }]} />
 
       <View style={styles.cardBody}>
         <View style={styles.cardHeader}>
           {/* Board icon */}
-          <View
-            style={[styles.boardIcon, { backgroundColor: color + "18" }]}
-          >
-            <View
-              style={[styles.boardIconInner, { backgroundColor: color }]}
-            />
+          <View style={[styles.boardIcon, { backgroundColor: color + "18" }]}>
+            <View style={[styles.boardIconInner, { backgroundColor: color }]} />
           </View>
 
           {shared && (
@@ -72,7 +71,9 @@ function BoardCard({ board, shared, navigateToBoard}) {
 
         <Text style={styles.boardTitle}>{board.title}</Text>
 
-        {shared && <Text style={styles.ownerText}>by {board.ownerUsername}</Text>}
+        {shared && (
+          <Text style={styles.ownerText}>by {board.ownerUsername}</Text>
+        )}
 
         <View style={styles.cardMeta}>
           <View style={styles.metaPill}>
@@ -96,70 +97,112 @@ function BoardCard({ board, shared, navigateToBoard}) {
 
 export default function BoardsScreen() {
   const { username } = useAuth();
-  const { init, ownedBoards , isReady, navigateToBoard } = useBoardsContainer();
-
+  const {
+    init,
+    ownedBoards,
+    sharedBoards,
+    isReady,
+    navigateToBoard,
+    isCreating,
+    setCreating,
+    creatingBoardName,
+    creatingBoardColorNum,
+    setCreatingBoardName,
+    setCreateingBoardColorNum,
+    createBoard,
+  } = useBoardsContainer();
+  console.log("rendering boards screen again");
   useEffect(() => {
     init();
   }, []);
 
-  if (!isReady){
+  if (!isReady) {
     return;
+  }
+
+  function onCreateBoardButtonPressed() {
+    setCreating(true);
   }
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>Good morning {username} 👋</Text>
-            <Text style={styles.headerTitle}>My Boards</Text>
-          </View>
-
-          {/* New Board Button */}
-          <TouchableOpacity style={styles.newButton} activeOpacity={0.8}>
-            <View style={styles.plusIcon}>
-              <View style={styles.plusH} />
-              <View style={styles.plusV} />
+      <View style = {styles.container} >
+        <CreateBoardModal
+          visible={isCreating}
+          onClose={() => setCreating(false)}
+          creatingBoardName={creatingBoardName}
+          creatingBoardColorNum={creatingBoardColorNum}
+          setCreatingBoardName={setCreatingBoardName}
+          setCreateingBoardColorNum={setCreateingBoardColorNum}
+          createBoard={createBoard}
+        />
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <View>
+              <Text style={styles.greeting}>Good morning {username} 👋</Text>
+              <Text style={styles.headerTitle}>My Boards</Text>
             </View>
-            <Text style={styles.newButtonText}>New</Text>
-          </TouchableOpacity>
-        </View>
 
-        {/* ── Your Boards ── */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Your Boards</Text>
-            <Text style={styles.sectionCount}>{ownedBoards.length}</Text>
+            {/* New Board Button */}
+            <TouchableOpacity
+              style={styles.newButton}
+              activeOpacity={0.8}
+              onPress={onCreateBoardButtonPressed}
+            >
+              <View style={styles.plusIcon}>
+                <View style={styles.plusH} />
+                <View style={styles.plusV} />
+              </View>
+              <Text style={styles.newButtonText}>New</Text>
+            </TouchableOpacity>
           </View>
 
-          {ownedBoards.map((board) => (
-            <BoardCard key={board.boardId} board={board} shared={false} navigateToBoard ={navigateToBoard}/>
-          ))}
-        </View>
+          {/* ── Your Boards ── */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Your Boards</Text>
+              <Text style={styles.sectionCount}>{ownedBoards.length}</Text>
+            </View>
 
-        {/* ── Has Access To ── */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Has Access To</Text>
-            <Text style={styles.sectionCount}>{sharedBoards.length}</Text>
+            {ownedBoards.map((board) => (
+              <BoardCard
+                key={board.boardId}
+                board={board}
+                shared={false}
+                navigateToBoard={navigateToBoard}
+              />
+            ))}
           </View>
 
-          <Text style={styles.sectionSubtitle}>
-            Boards others have shared with you
-          </Text>
+          {/* ── Has Access To ── */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Has Access To</Text>
+              <Text style={styles.sectionCount}>{sharedBoards.length}</Text>
+            </View>
 
-          {sharedBoards.map((board) => (
-            <BoardCard key={board.id} board={board} shared={true} navigateToBoard ={navigateToBoard}/>
-          ))}
-        </View>
+            <Text style={styles.sectionSubtitle}>
+              Boards others have shared with you
+            </Text>
 
-        <View style={{ height: 32 }} />
-      </ScrollView>
+            {sharedBoards.map((board) => (
+              <BoardCard
+                key={board.boardId}
+                board={board}
+                shared={true}
+                navigateToBoard={navigateToBoard}
+              />
+            ))}
+          </View>
+
+          <View style={{ height: 32 }} />
+        </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
@@ -168,6 +211,10 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: "#F3F4F6",
+    justifyContent: "center",
+  },
+  container: {
+    height: '90%',
   },
   scroll: {
     flex: 1,

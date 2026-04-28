@@ -4,108 +4,88 @@ import {
   StyleSheet,
   Pressable,
   TextInput,
-  Button,
   Text,
   Keyboard,
 } from "react-native";
 import { X } from "lucide-react-native/icons";
 import { InputField } from "./InputField";
 import { priorityOptions } from "../../domain/consts/priorityOptions";
-import { useState, useContext, useRef } from "react";
-import { Priority } from "../../domain/enums/priority";
-import { BoardSessionDataContext } from "../../domain/contexts/boardContext";
 import { Dropdown } from "react-native-element-dropdown";
-import { AddButton } from "./AddButton";
-import { PriorityTag } from "./PriorityTag";
-import Board from "../screens/Board";
+import { useCard } from "../../domain/hooks/cardHook";
+import { CardKeys } from "../../domain/enums/cardKeysEnum";
 
-export function CardDetails(props) {
-  const boardSessionData = useContext(BoardSessionDataContext);
-  const debounceTimer = useRef(null);
-
-  function GetAvailableStatesArray() {
-    let availableStates = [];
-    for (let i = 0; i < boardSessionData.columnsData.length; i++) {
-      const currentColumnData = boardSessionData.columnsData[i];
-      availableStates = [
-        ...availableStates,
-        {
-          label: currentColumnData.columnName,
-          value: currentColumnData.columnName,
-          columnId: currentColumnData.columnId,
-        },
-      ];
-    }
-    return availableStates;
+export function CardDetails({
+  closeModal,
+  previewCardId,
+  boardId,
+  cardModalVisible,
+}) {
+  const {
+    getCardById,
+    getCardState,
+    getAvailableCardStates,
+    updateCardLocally,
+    updateCardGlobally,
+    onCopyIdPressed,
+    copiedId
+  } = useCard();
+  const cardStates = getAvailableCardStates(boardId);
+  const card = getCardById(previewCardId);
+  if (!card) {
+    return;
   }
-
-  function UpdateCardDetails(updatedPreview,delay) {
-    if (delay){
-      clearTimeout(debounceTimer.current);
-    debounceTimer.current = setTimeout(() => {
-      boardSessionData.updateCardDataFromPreview(updatedPreview);
-    }, 200);
-    
-    }else{
-      boardSessionData.updateCardDataFromPreview(updatedPreview);
-    }
+  const cardState = getCardState(card);
+  if (!cardState) {
+    return;
   }
 
   function OnOutAreaPressed() {
     if (Keyboard.isVisible()) {
       Keyboard.dismiss();
     } else {
-      props.closeModal();
+      closeModal();
+      updateCardGlobally(card);
     }
   }
+
   return (
     <Modal
       transparent={true}
-      visible={props.cardModalVisible}
+      visible={cardModalVisible}
+      animationType="fade"
       onRequestClose={OnOutAreaPressed}
-      supportedOrientations={["portrait", "landscape"]}
     >
       <Pressable style={styles.cardDetailsModal} onPress={OnOutAreaPressed}>
         <Pressable style={styles.cardDetailsContainer}>
           <View style={styles.contentContainer}>
             <View style={styles.header}>
               <Text style={styles.title}>{"Task details"}</Text>
-              <Pressable onPress={props.closeModal}>
+              <Pressable onPress={OnOutAreaPressed}>
                 <X></X>
               </Pressable>
             </View>
             <InputField title={"Title *"} noBorder={true} spaceBelow={true}>
               {/* props.cardTitle */}
               <TextInput
-                value={boardSessionData.previewCardData.title}
+                value={card.title}
                 multiline={true}
                 style={styles.titleInput}
                 returnKeyType="done"
                 submitBehavior={"blurAndSubmit"}
                 onChangeText={(text) => {
-                  const updated = {
-                    ...boardSessionData.previewCardData,
-                    title: text,
-                  };
-                  boardSessionData.setPreviewCardData(updated);
-                  UpdateCardDetails(updated,true);
+                  updateCardLocally(card.id, CardKeys.title, text);
                 }}
               />
             </InputField>
             <InputField title={"Description"} noBorder={true} noCenter={true}>
               <TextInput
-                value={boardSessionData.previewCardData.description}
+                value={card.description}
                 multiline={true}
                 style={styles.descriptionInput}
                 returnKeyType="done"
                 submitBehavior={"blurAndSubmit"}
                 onChangeText={(text) => {
-                  const updated = {
-                    ...boardSessionData.previewCardData,
-                    description: text,
-                  };
-                  boardSessionData.setPreviewCardData(updated);
-                  UpdateCardDetails(updated,true);
+                  updateCardLocally(card.id, CardKeys.description, text);
                 }}
               />
             </InputField>
@@ -116,18 +96,16 @@ export function CardDetails(props) {
               noCenter={true}
             >
               <Dropdown
-                data={GetAvailableStatesArray()}
+                data={cardStates}
                 labelField="label"
                 valueField="value"
-                value={boardSessionData.previewCardData.status}
+                value={cardState}
                 onChange={(item) => {
-                  const updated = {
-                    ...boardSessionData.previewCardData,
-                    status: item.value,
-                    columnId: item.columnId,
-                  };
-                  boardSessionData.setPreviewCardData(updated);
-                  UpdateCardDetails(updated);
+                  updateCardLocally(
+                    card.id,
+                    CardKeys.parentColumnId,
+                    item.columnId,
+                  );
                 }}
                 style={styles.dropdown}
               />
@@ -137,18 +115,30 @@ export function CardDetails(props) {
                 data={priorityOptions}
                 labelField="label"
                 valueField="value"
-                value={boardSessionData.previewCardData.priority}
+                value={card.priority}
                 onChange={(item) => {
-                  const updated = {
-                    ...boardSessionData.previewCardData,
-                    priority: item.value,
-                  };
-                  boardSessionData.setPreviewCardData(updated);
-                  UpdateCardDetails(updated);
+                  updateCardLocally(card.id, CardKeys.priority, item.value);
                 }}
                 style={styles.dropdown}
               />
             </InputField>
+            <InputField
+              title={"External worker"}
+              noBorder={true}
+              spaceBelow={true}
+            >
+              {/* props.cardTitle */}
+              <Text
+                style={[styles.titleInput, { marginTop: 10, marginLeft: 15 }]}
+              >
+                {card.externalWorker ? card.externalWorker : "None"}
+              </Text>
+            </InputField>
+            <Pressable onPress={() => onCopyIdPressed(card)} style={styles.copyIdButton}>
+              <Text style={[styles.copyIdText, copiedId && styles.copiedText]}>
+                {copiedId ? "Copied!" : "Copy task ID"}
+              </Text>
+            </Pressable>
           </View>
         </Pressable>
       </Pressable>
@@ -158,6 +148,7 @@ export function CardDetails(props) {
 
 const styles = StyleSheet.create({
   cardDetailsModal: {
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: "#2424247b",
     height: "100%",
     flex: "100%",
@@ -165,7 +156,7 @@ const styles = StyleSheet.create({
   },
 
   cardDetailsContainer: {
-    width: "50%",
+    width: "70%",
     height: "100%",
     backgroundColor: "white",
 
@@ -230,4 +221,23 @@ const styles = StyleSheet.create({
     fontSize: 12,
     minHeight: 80,
   },
+  copyIdButton: {
+  marginTop: 30,
+  alignSelf: "flex-start",
+  paddingVertical: 6,
+  paddingHorizontal: 12,
+  borderRadius: 8,
+  borderWidth: 1,
+  borderColor: "#9e9797",
+},
+
+copyIdText: {
+  fontSize: 13,
+  color: "#555",
+},
+
+copiedText: {
+  color: "#22c55e",
+  fontWeight: "600",
+},
 });

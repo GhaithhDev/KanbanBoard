@@ -1,5 +1,12 @@
+
+export type boardAuthorizedUser = {
+    username: string,
+    color: string
+}
+
 export class Board {
     id!: string;
     title!: string;
-    columnIds!: string[];
+    isCreating!: boolean;
+    authorizedUsers!: boardAuthorizedUser[]
 }

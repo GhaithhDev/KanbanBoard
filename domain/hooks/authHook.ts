@@ -40,6 +40,7 @@ export default function useAuth() {
   }
 
   async function signIn() {
+    
     if (
       typeof writingUsername !== "string" ||
       typeof writingPassword !== "string"
@@ -58,14 +59,13 @@ export default function useAuth() {
         },
         "Signing you in...",
       );
-      console.log(result);
+      
       setUsername(result.username);
       authenticate(result.accessToken);
     } catch (error: ExceptionData) {
-      console.log("errored");
+      console.log(error);
       //do an alert with the error
       if (!error ) {
-        console.error("error trying to log user in");
         return;
       }
       

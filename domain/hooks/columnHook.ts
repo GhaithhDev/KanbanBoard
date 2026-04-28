@@ -1,117 +1,133 @@
-import { useEffect, useState } from "react";
+import { useContext, useState } from "react";
 import { FetchRequestTypes } from "../enums/fetchRequestTypes";
-import { Card } from "../objects/card.object";
 import { useApiRequest } from "./apiRequestHook";
-import { CreateCardDto } from "../objects/create-card.dto";
+import { useBoardsContainer } from "./boardsContainerHook";
+import { Column } from "../objects/column.object";
+import { ColumnContext } from "../contexts/columnContext";
 
 const API_CALLS = {
-  getColumn: {
-    endpoint: "/column",
-    requestType: FetchRequestTypes.GET,
-  },
-  createCard: {
-    endpoint: "/card/create",
+  createColumn: {
+    endpoint: "/column/create",
     requestType: FetchRequestTypes.POST,
   },
-  deleteCard: {
-    endpoint: "/card/",
+  deleteColumn: {
+    endpoint: "/column/",
     requestType: FetchRequestTypes.DELETE,
+  },
+  getBoardColumns: {
+    endpoint: "/column/",
+    requestType: FetchRequestTypes.GET,
   },
 };
 
-type columnUsage = {
-  title: string;
-  cards: Card[];
-  isReady: boolean;
-  isCreating: boolean;
-  setIsCreating: (newState: boolean) => void;
-  setTitle: (newTitle: string) => void;
-  setCards: (newCards: Card[]) => void;
-  setReady: (newState: boolean) => void;
-  createCard: (createCardDto: CreateCardDto) => void;
-  deleteCard: (cardId: string) => void
-};
-
-export function useColumn(columnId: string) {
+export function useColumn(receivedBoardId?: string) {
+  //const [cards, setCards] = useState<Card[]>([]);
   const { sendApiRequest } = useApiRequest();
-  const [title, setTitle] = useState<string>("");
-  const [cards, setCards] = useState<Card[]>([]);
-  const [isCreating, setIsCreating] = useState<boolean>(false);
-  const [isReady, setReady] = useState(false);
 
-  async function createCard(createCardDto: CreateCardDto) {
-    try {
-      const result = await sendApiRequest(
-        API_CALLS.createCard.endpoint,
-        API_CALLS.createCard.requestType,
-        createCardDto,
-        "creating card...",
-      );
-      const newCard = {
-        id: result.id,
-        title: result.title,
-        description: result.description,
-        priority: result.priority,
-        parentColumnId: result.parentColumnId,
+  const { columns, setColumns, boardId, setBoardId } =
+    useContext(ColumnContext);
+  const [isColumnsReady, setReady] = useState(false);
+
+  const { updateBoardChildrenAmount } = useBoardsContainer();
+
+  function updateColumns(columnData: any) {
+    const newColumns: Column[] = [];
+    for (let i = 0; i < columnData.length; i++) {
+      const colulmnData = columnData[i];
+      const newColumn: Column = {
+        id: colulmnData.id,
+        title: colulmnData.title,
+        parentBoardId: colulmnData.parentBoardId,
+        isCreating: false,
       };
-
-      setCards((prev) => [...prev, newCard]);
-    } catch (error) {
-      console.log(error);
-      console.log("error creating card");
+      newColumns.push(newColumn);
+    }
+    setColumns(newColumns);
+    if (boardId) {
+      updateBoardChildrenAmount(boardId, true, newColumns.length);
     }
   }
 
-  async function deleteCard(cardId: string) {
-    console.log(cardId);
+  async function createColumn(columnName: string, boardId: string) {
     try {
       const result = await sendApiRequest(
-        API_CALLS.deleteCard.endpoint + cardId,
-        API_CALLS.deleteCard.requestType,
-        null,
-        "deleting card...",
+        API_CALLS.createColumn.endpoint,
+        API_CALLS.createColumn.requestType,
+        {
+          columnName: columnName,
+          boardId: boardId,
+        },
+        "creating column...",
       );
-     
-      setCards((prev) => prev.filter( (card: Card) => card.id !== cardId ));
+      updateColumns(result);
     } catch (error) {
-      console.log(error);
-      console.log("error creating card");
+      console.error("error creating column", error);
     }
   }
 
-  function editCard() {}
+  function setColumnCreating(columnId: string, newState: boolean) {
+    setColumns((prev: Column[]) =>
+      prev.map((column: Column) => {
+        if (column.id === columnId) column.isCreating = newState;
+        return column;
+      }),
+    );
+  }
 
-  async function init() {
+  function getBoardColumns(boardId: string){
+    return columns.filter( (column: Column) => column.parentBoardId === boardId );
+  }
+
+  async function deleteColumn(columnId: string) {
     try {
       const result = await sendApiRequest(
-        API_CALLS.getColumn.endpoint + "/" + columnId,
-        API_CALLS.getColumn.requestType,
+        API_CALLS.deleteColumn.endpoint + columnId,
+        API_CALLS.deleteColumn.requestType,
         null,
-        "Loading board...",
+        "deleting column...",
       );
 
-      setTitle(result.columnName);
-      setCards(result.cards);
+      const newColumns = columns.filter(
+        (column: Column) => column.id !== columnId,
+      );
+      setColumns(newColumns);
+      if (boardId) {
+        updateBoardChildrenAmount(boardId, true, newColumns.length);
+      }
+    } catch (error) {
+      console.error("error creating column", error);
+    }
+  }
+
+  async function initColumns() {
+    if(!receivedBoardId){
+      return;
+    }
+    try {
+      const result = await sendApiRequest(
+        API_CALLS.getBoardColumns.endpoint + receivedBoardId,
+        API_CALLS.getBoardColumns.requestType,
+        null,
+        "Loading columns...",
+      );
+      updateColumns(result);
+      setBoardId(receivedBoardId);
       setReady(true);
     } catch (error) {
-      console.error(`failed to retrieve data for column with id: ${columnId} `);
+      console.error(
+        `failed to retrieve board columns for board with id: ${receivedBoardId} `,
+      );
     }
   }
 
-  useEffect(() => {
-    init();
-  }, [columnId]);
-
   return {
-    title,
-    cards,
-    isCreating,
-    isReady,
-    setTitle,
-    setCards,
-    setIsCreating,
-    setReady,
-    createCard,
-    deleteCard
-  } satisfies columnUsage;
+    initColumns,
+    columns,
+    isColumnsReady,
+
+    createColumn,
+    deleteColumn,
+    setColumnCreating,
+    getBoardColumns
+  };
 }

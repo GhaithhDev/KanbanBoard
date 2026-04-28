@@ -51,8 +51,8 @@ function AuthNavigator() {
    console.log("loading App.js/AuthNavigator");
   return (
     <stackNavigator.Navigator>
-      <stackNavigator.Screen name={ScreenNames.SignIn} component={SignIn} />
-      <stackNavigator.Screen name={ScreenNames.SignUp} component={SignUp} />
+      <stackNavigator.Screen name={ScreenNames.SignIn} component={SignIn} options={{headerTitleAlign: 'center'}} />
+      <stackNavigator.Screen name={ScreenNames.SignUp} component={SignUp} options={{headerTitleAlign: 'center'}} />
     </stackNavigator.Navigator>
   );
 }

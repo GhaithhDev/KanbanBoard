@@ -1,77 +1,34 @@
-import { useEffect, useState } from "react";
+import { useContext, useState } from "react";
 import { useApiRequest } from "./apiRequestHook";
 import { FetchRequestTypes } from "../enums/fetchRequestTypes";
+import { boardContext } from "../contexts/boardContext";
+import { Board } from "../objects/board.object";
+import { USER_COLORS } from "../consts/userColors";
+import { useColumn } from "./columnHook";
 
 const API_CALLS = {
   getBoardById: {
     endpoint: "/board",
     requestType: FetchRequestTypes.GET,
   },
-  createColumn: {
-    endpoint: "/column/create",
+  addUserToBoard: {
+    endpoint: "/board/add/user",
     requestType: FetchRequestTypes.POST,
   },
-  deleteColumn: {
-    endpoint: "/column/",
-    requestType: FetchRequestTypes.DELETE,
-  },
 };
 
-type boardUsage = {
-  title: string;
-  columnIds: string[];
-  isReady: boolean;
-  isCreating: boolean;
-  boardId: string | undefined;
-  setTitle: (newTitle: string) => void;
-  setColumns: (newColumnIds: string[]) => void;
-  setReady: (newState: boolean) => void;
-  setIsCreating: (newState: boolean) => void;
-  createColumn: (columnName: string, boardId: string) => void;
-  deleteColumn: (columnId: string) => void;
-  init: () => void;
-};
-
-export function useBoard(receviedBoardId: string) {
+export function useBoard(receviedBoardId?: string) {
   const { sendApiRequest } = useApiRequest();
-  const [title, setTitle] = useState<string>("");
-  const [columnIds, setColumns] = useState<string[]>([]);
-  const [isReady, setReady] = useState(false);
+
+  const { board, setBoard }: { board: Board | null; setBoard: any } =
+    useContext(boardContext);
+  const { getBoardColumns } = useColumn();
+  const [isAddingUser, setAdding] = useState(false);
+  const [addingUserText, setAddingUserText] = useState("");
   const [isCreating, setIsCreating] = useState(false);
-  const [boardId, setBoardId] = useState<string | undefined>();
+  const [isReady, setReady] = useState(false);
 
-  async function createColumn(columnName: string, boardId: string) {
-    try {
-      const result = await sendApiRequest(
-        API_CALLS.createColumn.endpoint,
-        API_CALLS.createColumn.requestType,
-        {
-          columnName: columnName,
-          boardId: boardId,
-        },
-        "creating column...",
-      );
-      setColumns((prev) => [...prev, result]);
-    } catch (error) {
-      console.error("error creating column", error);
-    }
-  }
-
-  async function deleteColumn(columnId: string) {
-    try {
-      const result = await sendApiRequest(
-        API_CALLS.deleteColumn.endpoint + columnId,
-        API_CALLS.deleteColumn.requestType,
-        null,
-        "deleting column...",
-      );
-      setColumns((prev) => prev.filter((id) => id !== columnId));
-    } catch (error) {
-      console.error("error creating column", error);
-    }
-  }
-
-  async function init() {
+  async function initBoard() {
     try {
       const result = await sendApiRequest(
         API_CALLS.getBoardById.endpoint + "/" + receviedBoardId,
@@ -80,28 +37,67 @@ export function useBoard(receviedBoardId: string) {
         "Loading board...",
       );
 
-      setTitle(result.name);
-      setColumns(result.columnIds);
-      setBoardId(receviedBoardId);
+      setBoard({
+        id: receviedBoardId,
+        title: result.name,
+        isCreating: false,
+        authorizedUsers: result.authorizedUsers.map(
+          (authorizedUserData: any) => ({
+            username: authorizedUserData.username,
+            color: USER_COLORS[authorizedUserData.color - 1],
+          }),
+        ),
+      });
+
       setReady(true);
     } catch (error) {
-      console.error(`failed to retrieve data for board with id: ${boardId} `);
+      console.error(`failed to retrieve data for board with id: ${board?.id} `);
     }
   }
 
-  return {
-    title,
-    columnIds,
-    isReady,
-    isCreating,
-    boardId,
-    setTitle,
-    setColumns,
-    setReady,
-    setIsCreating,
-    createColumn,
-    deleteColumn,
+  async function addBoardToUser(username: string, boardId: string) {
+    try {
+      const result = await sendApiRequest(
+        API_CALLS.addUserToBoard.endpoint,
+        API_CALLS.addUserToBoard.requestType,
+        {
+          username: username,
+          boardId: boardId,
+        },
+        "adding to board...",
+      );
+      setAdding(false);
+      setAddingUserText("");
 
-    init,
-  } satisfies boardUsage;
+      setBoard({
+        id: boardId,
+        title: result.name,
+        isCreating: false,
+        authorizedUsers: result.authorizedUsers.map(
+          (authorizedUserData: any) => ({
+            username: authorizedUserData.username,
+            color: USER_COLORS[authorizedUserData.color],
+          }),
+        ),
+      });
+    } catch (error) {
+      console.error(`failed to retrieve data for board with id: ${board?.id} `);
+    }
+  }
+
+  
+
+  return {
+    board,
+    isReady,
+    isAddingUser,
+    addingUserText,
+    isCreating,
+    setAdding,
+    initBoard,
+    setIsCreating,
+    setAddingUserText,
+    addBoardToUser,
+    
+  };
 }

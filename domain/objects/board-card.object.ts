@@ -6,4 +6,5 @@ export class BoardCard{
     cardsAmount!: number;
     colorNum!: number;
     ownerUsername!: string;
+    isShared!: boolean
 }

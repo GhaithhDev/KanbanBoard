@@ -2,12 +2,11 @@ import { StyleSheet, Text, View, TextInput, Pressable } from "react-native";
 
 import { Trash2 } from "lucide-react-native";
 import { PriorityTag } from "./PriorityTag";
-
-
-
-
+import { useCard } from "../../domain/hooks/cardHook";
 
 export default function Card(props) {
+
+  const { setPreviewCardId, setPreviewingCard } = useCard();
   /*const boardSessionData = useContext(BoardSessionDataContext);
 
   function OpenPreviewCardDetails() {
@@ -22,27 +21,35 @@ export default function Card(props) {
     boardSessionData.toggleCardDetails();
   }*/
 
+  function onCardPressed(){
+    setPreviewCardId(props.card.id);
+    setPreviewingCard(true);
+  }
+
   return (
-    <Pressable style={styles.card} /*onPress={OpenPreviewCardDetails}*/>
+    <Pressable style={styles.card} onPress={onCardPressed}>
       <View style={styles.cardHeader}>
         <Text numberOfLines={1} style={styles.cardTitle}>
-          {props.name}
+          {props.card.title}
         </Text>
-        <Trash2 color={"red"} size={17} onPress={() => props.deleteCard(props.cardId)}></Trash2>
+        <Trash2
+          color={"red"}
+          size={17}
+          onPress={() => props.deleteCard(props.card.id)}
+        ></Trash2>
       </View>
 
-      {props.description?.length > 0 && (
+      {props.card.description?.length > 0 && (
         <Text numberOfLines={2} style={styles.cardDescription}>
-          {props.description}
+          {props.card.description}
         </Text>
       )}
       <View style={[styles.tagsContainer, styles.marginTop]}>
-        <PriorityTag priority={props.priority} />
+        <PriorityTag priority={props.card.priority} />
       </View>
     </Pressable>
   );
 }
-
 
 const styles = StyleSheet.create({
   card: {
