@@ -30,7 +30,7 @@ export function useColumn(receivedBoardId?: string) {
 
   const { updateBoardChildrenAmount } = useBoardsContainer();
 
-  function updateColumns(columnData: any) {
+  function updateColumns(columnData: any, id: string) {
     const newColumns: Column[] = [];
     for (let i = 0; i < columnData.length; i++) {
       const colulmnData = columnData[i];
@@ -43,9 +43,7 @@ export function useColumn(receivedBoardId?: string) {
       newColumns.push(newColumn);
     }
     setColumns(newColumns);
-    if (boardId) {
-      updateBoardChildrenAmount(boardId, true, newColumns.length);
-    }
+   updateBoardChildrenAmount(id, true, newColumns.length);
   }
 
   async function createColumn(columnName: string, boardId: string) {
@@ -59,7 +57,7 @@ export function useColumn(receivedBoardId?: string) {
         },
         "creating column...",
       );
-      updateColumns(result);
+      updateColumns(result,boardId);
     } catch (error) {
       console.error("error creating column", error);
     }
@@ -110,7 +108,7 @@ export function useColumn(receivedBoardId?: string) {
         null,
         "Loading columns...",
       );
-      updateColumns(result);
+      updateColumns(result,receivedBoardId);
       setBoardId(receivedBoardId);
       setReady(true);
     } catch (error) {

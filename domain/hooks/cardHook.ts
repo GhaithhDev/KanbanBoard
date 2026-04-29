@@ -99,7 +99,7 @@ export function useCard(receviedBoardId?: string) {
     }
   }
 
-  function updateCards(cardData: any) {
+  function updateCards(cardData: any, id: string) {
     const newCards: Card[] = [];
     for (let i = 0; i < cardData.length; i++) {
       const thisCardData = cardData[i];
@@ -114,9 +114,7 @@ export function useCard(receviedBoardId?: string) {
       newCards.push(newCard);
     }
     setCards(newCards);
-    if (boardId) {
-      updateBoardChildrenAmount(boardId, false, newCards.length);
-    }
+    updateBoardChildrenAmount(id, false, newCards.length);
   }
 
   async function createCard(createCardDto: CreateCardDto) {
@@ -127,7 +125,7 @@ export function useCard(receviedBoardId?: string) {
         createCardDto,
         "creating card...",
       );
-      updateCards(result);
+      updateCards(result, createCardDto.boardid);
     } catch (error) {
       console.log(error);
       console.log("error creating card");
@@ -195,7 +193,7 @@ export function useCard(receviedBoardId?: string) {
         null,
         "Loading cards...",
       );
-      updateCards(result);
+      updateCards(result,receviedBoardId);
       setBoardId(receviedBoardId);
       setCardsReady(true);
     } catch (error) {

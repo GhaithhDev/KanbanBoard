@@ -5,6 +5,9 @@ import { boardContext } from "../contexts/boardContext";
 import { Board } from "../objects/board.object";
 import { USER_COLORS } from "../consts/userColors";
 import { useColumn } from "./columnHook";
+import { CardContext } from "../contexts/cardContext";
+import { ColumnContext } from "../contexts/columnContext";
+import { ReceiptIcon } from "lucide-react-native";
 
 const API_CALLS = {
   getBoardById: {
@@ -22,6 +25,9 @@ export function useBoard(receviedBoardId?: string) {
 
   const { board, setBoard }: { board: Board | null; setBoard: any } =
     useContext(boardContext);
+  const cardData = useContext(CardContext);
+  const columnData = useContext(ColumnContext);
+
   const { getBoardColumns } = useColumn();
   const [isAddingUser, setAdding] = useState(false);
   const [addingUserText, setAddingUserText] = useState("");
@@ -48,6 +54,11 @@ export function useBoard(receviedBoardId?: string) {
           }),
         ),
       });
+      if (receviedBoardId){
+        cardData.setBoardId(receviedBoardId);
+        columnData.setBoardId(receviedBoardId);
+      }
+      
 
       setReady(true);
     } catch (error) {
@@ -68,7 +79,7 @@ export function useBoard(receviedBoardId?: string) {
       );
       setAdding(false);
       setAddingUserText("");
-
+      console.log(result);
       setBoard({
         id: boardId,
         title: result.name,
@@ -76,7 +87,7 @@ export function useBoard(receviedBoardId?: string) {
         authorizedUsers: result.authorizedUsers.map(
           (authorizedUserData: any) => ({
             username: authorizedUserData.username,
-            color: USER_COLORS[authorizedUserData.color],
+            color: USER_COLORS[authorizedUserData.color- 1],
           }),
         ),
       });
