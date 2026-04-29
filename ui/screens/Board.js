@@ -190,7 +190,7 @@ export default function Board() {
               <CreateColumnSection
                 onCreateButtonPressed={onCreateButtonPressed}
                 submit={onCreateColumnSubmit}
-                isCreating={board.isCreating}
+                isCreating={isCreating}
               />
             }
           />

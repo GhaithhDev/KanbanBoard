@@ -24,6 +24,7 @@ export function CreatingInput(props) {
     <View
       style={[
         styles.contianer,
+        { justifyContent: 'center', alignItems: 'center' },
         !props.excludeBackground && styles.background,
         !props.excludeBorder && styles.border,
         !props.excludeMargin && (isHorizontal() ? styles.horizontalMargin : styles.verticalMargin)
@@ -31,7 +32,7 @@ export function CreatingInput(props) {
     >
       <TextInput
         onSubmitEditing={(e) => OnFinishWriting(e.nativeEvent.text)}
-        style={{ marginLeft: 10 }}
+        style={{ marginLeft: 10,paddingVertical: 0, textAlignVertical: 'center', width: '85%', height: '75%' }}
         placeholder={props.placeHolder}
         placeholderTextColor={"#3f3e3e60"}
       ></TextInput>

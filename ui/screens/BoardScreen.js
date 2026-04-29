@@ -9,42 +9,11 @@ import {
 } from "react-native";
 import useAuth from "../../domain/hooks/authHook";
 import { useBoardsContainer } from "../../domain/hooks/boardsContainerHook";
-import { BOARD_COLORS } from "../../domain/consts/boardColors";
 import { getColorFromNum } from "../../domain/utils/getColorFromNum";
 import CreateBoardModal from "../components/CreateBoardModal";
+import { Trash2 } from "lucide-react-native/icons";
 
-const yourBoards = [
-  {
-    id: "1",
-    title: "Product Roadmap",
-    columns: 4,
-    tasks: 18,
-    color: "#2563EB",
-  },
-  { id: "2", title: "Sprint Planning", columns: 3, tasks: 9, color: "#7C3AED" },
-  { id: "3", title: "Marketing Q3", columns: 5, tasks: 24, color: "#0891B2" },
-];
-
-/*const sharedBoards = [
-  {
-    id: "4",
-    title: "Design System",
-    columns: 3,
-    tasks: 11,
-    color: "#059669",
-    owner: "Sarah M.",
-  },
-  {
-    id: "5",
-    title: "Backend Infra",
-    columns: 4,
-    tasks: 7,
-    color: "#DC2626",
-    owner: "Alex K.",
-  },
-];
-*/
-function BoardCard({ board, shared, navigateToBoard }) {
+function BoardCard({ board, shared, navigateToBoard, deleteBoard }) {
   const color = getColorFromNum(board.colorNum);
   return (
     <TouchableOpacity
@@ -56,7 +25,7 @@ function BoardCard({ board, shared, navigateToBoard }) {
       <View style={[styles.cardStrip, { backgroundColor: color }]} />
 
       <View style={styles.cardBody}>
-        <View style={styles.cardHeader}>
+        <View style={[styles.cardHeader]}>
           {/* Board icon */}
           <View style={[styles.boardIcon, { backgroundColor: color + "18" }]}>
             <View style={[styles.boardIconInner, { backgroundColor: color }]} />
@@ -87,9 +56,18 @@ function BoardCard({ board, shared, navigateToBoard }) {
       </View>
 
       {/* Arrow */}
-      <View style={styles.cardArrow}>
-        <View style={styles.arrowLine} />
-        <View style={styles.arrowHead} />
+      <View style={{ justifyContent: "space-between", height: "90" }}>
+        {!shared && (
+          <Trash2
+            color={"red"}
+            size={17}
+            onPress={() => deleteBoard(board.boardId)}
+          ></Trash2>
+        )}
+        <View style={styles.cardArrow}>
+          <View style={styles.arrowLine} />
+          <View style={styles.arrowHead} />
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -110,8 +88,9 @@ export default function BoardsScreen() {
     setCreatingBoardName,
     setCreateingBoardColorNum,
     createBoard,
+    deleteBoard,
   } = useBoardsContainer();
-  console.log("rendering boards screen again");
+
   useEffect(() => {
     init();
   }, []);
@@ -126,7 +105,7 @@ export default function BoardsScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style = {styles.container} >
+      <View style={styles.container}>
         <CreateBoardModal
           visible={isCreating}
           onClose={() => setCreating(false)}
@@ -169,12 +148,19 @@ export default function BoardsScreen() {
               <Text style={styles.sectionCount}>{ownedBoards.length}</Text>
             </View>
 
+            {ownedBoards.length === 0 && (
+              <Text style={styles.sectionSubtitle}>
+                No boards yet
+              </Text>
+            )}
+
             {ownedBoards.map((board) => (
               <BoardCard
                 key={board.boardId}
                 board={board}
                 shared={false}
                 navigateToBoard={navigateToBoard}
+                deleteBoard={deleteBoard}
               />
             ))}
           </View>
@@ -214,7 +200,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   container: {
-    height: '90%',
+    height: "90%",
   },
   scroll: {
     flex: 1,
@@ -333,6 +319,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    width: "100%",
     marginBottom: 10,
   },
   boardIcon: {
@@ -399,7 +386,8 @@ const styles = StyleSheet.create({
   cardArrow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingRight: 16,
+    paddingRight: 20,
+    paddingBottom: 30,
   },
   arrowLine: {
     width: 10,

@@ -74,8 +74,9 @@ export default function BoardColumn({
         </View>
       </View>
       <View style={styles.columnContent}>
-        <View style={{ width: "90%", height: "90%" }}>
+        <View style={{ width: "90%", height: "95%" }}>
           <FlatList
+
             data={cards}
             renderItem={RenderCard}
             ListFooterComponent={

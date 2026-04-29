@@ -8,13 +8,15 @@ import { useBoardsContainer } from "./boardsContainerHook";
 import { Column } from "../objects/column.object";
 import { useColumn } from "./columnHook";
 import { CardKeys } from "../enums/cardKeysEnum";
-import * as Clipboard from 'expo-clipboard';
-
-
+import * as Clipboard from "expo-clipboard";
 
 const API_CALLS = {
   getColumnCards: {
     endpoint: "/card/",
+    requestType: FetchRequestTypes.GET,
+  },
+  getCard: {
+    endpoint: "/card/getCard/",
     requestType: FetchRequestTypes.GET,
   },
   getBoardCards: {
@@ -35,11 +37,9 @@ const API_CALLS = {
   },
 };
 
-const COPY_ID_COOLDOWN = 2000 //MS
+const COPY_ID_COOLDOWN = 2000; //MS
 
 export function useCard(receviedBoardId?: string) {
-  const { sendApiRequest } = useApiRequest();
-
   const {
     cards,
     setCards,
@@ -53,21 +53,26 @@ export function useCard(receviedBoardId?: string) {
 
   const { updateBoardChildrenAmount } = useBoardsContainer();
   const { getBoardColumns, columns } = useColumn();
+  const { sendApiRequest } = useApiRequest();
 
   const [isCardsReady, setCardsReady] = useState<boolean>();
-  const [ copiedId, setCopiedId ] = useState<boolean>();
+  const [copiedId, setCopiedId] = useState<boolean>();
 
-  function updateCardLocally(updatingCardId: string, updatingCardKey: CardKeys, updatingCardValue: any){
-    const newCards: Card[] = cards.map( (card: Card) => {
-     if (card.id === updatingCardId){
-      card[updatingCardKey] = updatingCardValue;
-     }
-     return card;
-    } )
+  function updateCardLocally(
+    updatingCardId: string,
+    updatingCardKey: CardKeys,
+    updatingCardValue: any,
+  ) {
+    const newCards: Card[] = cards.map((card: Card) => {
+      if (card.id === updatingCardId) {
+        card[updatingCardKey] = updatingCardValue;
+      }
+      return card;
+    });
     setCards(newCards);
   }
 
-  async function updateCardGlobally(newCardDetails: Card){ //will send a request to the api to update card data
+  async function updateCardGlobally(newCardDetails: Card) {
     try {
       const result = await sendApiRequest(
         API_CALLS.editCard.endpoint,
@@ -75,7 +80,19 @@ export function useCard(receviedBoardId?: string) {
         newCardDetails,
         "updating card...",
       );
-      updateCards(result);
+
+      const newCardData: Card = await sendApiRequest(
+        API_CALLS.getCard.endpoint + newCardDetails.id,
+        API_CALLS.getCard.requestType,
+        null,
+        "updating card...",
+      );
+
+      const newCards: Card[] = cards.map((card: Card) => {
+        if (card.id === newCardData.id) return newCardData;
+        return card;
+      });
+      setCards(newCards);
     } catch (error) {
       console.log(error);
       console.log("error editing card");
@@ -92,7 +109,7 @@ export function useCard(receviedBoardId?: string) {
         description: thisCardData.description,
         priority: thisCardData.priority,
         parentColumnId: thisCardData.parentColumnId,
-        externalWorker: thisCardData.externalWorker
+        externalWorker: thisCardData.externalWorker,
       };
       newCards.push(newCard);
     }
@@ -142,10 +159,9 @@ export function useCard(receviedBoardId?: string) {
     return cards.filter((card: Card) => card.parentColumnId === columnId);
   }
 
-  function getCardById(cardId: string): Card | undefined{
-    return cards.find( (card: Card) => card.id === cardId );
+  function getCardById(cardId: string): Card | undefined {
+    return cards.find((card: Card) => card.id === cardId);
   }
-
 
   function getAvailableCardStates(boardId: string) {
     const columns: Column[] = getBoardColumns(boardId);
@@ -157,14 +173,15 @@ export function useCard(receviedBoardId?: string) {
     }));
   }
 
-   function getCardState(card: Card): string | undefined {
-    const parentColumn: Column | undefined = columns.find( (column: Column) => card.parentColumnId === column.id );
-    if(!parentColumn){
+  function getCardState(card: Card): string | undefined {
+    const parentColumn: Column | undefined = columns.find(
+      (column: Column) => card.parentColumnId === column.id,
+    );
+    if (!parentColumn) {
       console.error("card doesn't have a parent");
       return;
     }
     return parentColumn.title;
-
   }
 
   async function initCards() {
@@ -188,11 +205,11 @@ export function useCard(receviedBoardId?: string) {
     }
   }
 
-  async function onCopyIdPressed(card: Card){
-    if(copiedId) return;
+  async function onCopyIdPressed(card: Card) {
+    if (copiedId) return;
     setCopiedId(true);
     await Clipboard.setStringAsync(card.id);
-    setTimeout( () => setCopiedId(false), COPY_ID_COOLDOWN )
+    setTimeout(() => setCopiedId(false), COPY_ID_COOLDOWN);
   }
 
   return {
@@ -213,6 +230,6 @@ export function useCard(receviedBoardId?: string) {
     getAvailableCardStates,
     updateCardLocally,
     updateCardGlobally,
-    onCopyIdPressed
+    onCopyIdPressed,
   };
 }

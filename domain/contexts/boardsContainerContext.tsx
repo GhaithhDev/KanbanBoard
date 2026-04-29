@@ -1,11 +1,11 @@
-import { createContext, useState } from "react";
+import { createContext, Dispatch, SetStateAction, useState } from "react";
 import { BoardCard } from "../objects/board-card.object";
 
 export type boardsContainerContextData = {
   ownedBoards: BoardCard[]
   sharedBoards: BoardCard[]
-  setOwnedBoards: (newOwnedBoards : BoardCard[]) => void
-  setSharedBoards: (newSharedBoards : BoardCard[]) => void
+  setOwnedBoards: Dispatch<SetStateAction<BoardCard[]>>;
+  setSharedBoards: Dispatch<SetStateAction<BoardCard[]>>;
 };
 
 const initValue: boardsContainerContextData = {

@@ -1,6 +1,5 @@
 import { useContext, useState } from "react";
 import { BoardCard } from "../objects/board-card.object";
-import { SharedBoardCard } from "../objects/sharedBoardCard.object";
 import { useApiRequest } from "./apiRequestHook";
 import { FetchRequestTypes } from "../enums/fetchRequestTypes";
 import { useNavigation } from "@react-navigation/native";
@@ -24,14 +23,19 @@ const API_CALLS = {
     endpoint: "/board/shared",
     requestType: FetchRequestTypes.GET,
   },
-   createBoard: {
+  createBoard: {
     endpoint: "/board/create",
     requestType: FetchRequestTypes.POST,
+  },
+  deleteBoard: {
+    endpoint: "/board/",
+    requestType: FetchRequestTypes.DELETE,
   },
 };
 
 export function useBoardsContainer() {
-  const { ownedBoards, setOwnedBoards, sharedBoards, setSharedBoards } = useContext(boardsContainerContext);
+  const { ownedBoards, setOwnedBoards, sharedBoards, setSharedBoards } =
+    useContext(boardsContainerContext);
   const [isReady, setIsReady] = useState<boolean>(false);
   const navigation = useNavigation<NavigationProp>();
 
@@ -42,28 +46,27 @@ export function useBoardsContainer() {
 
   const { sendApiRequest } = useApiRequest();
 
-  function updateBoards(boards: any,shared: boolean){
+  function updateBoards(boards: any, shared: boolean) {
     const newOwnedBoards: BoardCard[] = [];
-      for (let i = 0; i < boards.length; i++) {
-        const boardData = boards[i];
-        const boardCard: BoardCard = {
-          boardId: boardData.boardId,
-          title: boardData.title,
-          columnIds: boardData.columnIds,
-          columnsAmount: boardData.columnsAmount,
-          cardsAmount: boardData.cardsAmount,
-          colorNum: boardData.colorNum,
-          ownerUsername: boardData.ownerUsername,
-          isShared: shared
-        };
-        newOwnedBoards.push(boardCard);
-      }
-      if(shared){
-        setSharedBoards(newOwnedBoards)
-      }else{
-        setOwnedBoards(newOwnedBoards);
-      }
-      
+    for (let i = 0; i < boards.length; i++) {
+      const boardData = boards[i];
+      const boardCard: BoardCard = {
+        boardId: boardData.boardId,
+        title: boardData.title,
+        columnIds: boardData.columnIds,
+        columnsAmount: boardData.columnsAmount,
+        cardsAmount: boardData.cardsAmount,
+        colorNum: boardData.colorNum,
+        ownerUsername: boardData.ownerUsername,
+        isShared: shared,
+      };
+      newOwnedBoards.push(boardCard);
+    }
+    if (shared) {
+      setSharedBoards(newOwnedBoards);
+    } else {
+      setOwnedBoards(newOwnedBoards);
+    }
   }
 
   async function createBoard() {
@@ -71,11 +74,11 @@ export function useBoardsContainer() {
       const boards = await sendApiRequest(
         API_CALLS.createBoard.endpoint,
         API_CALLS.createBoard.requestType,
-        {name: creatingBoardName, colorNum: creatingBoardColorNum},
+        { name: creatingBoardName, colorNum: creatingBoardColorNum },
         "creating your board...",
       );
       //onsole.log(boards);
-      updateBoards(boards,false);
+      updateBoards(boards, false);
       setCreatingBoardName("");
       setCreateingBoardColorNum("1");
       setCreating(false);
@@ -99,13 +102,11 @@ export function useBoardsContainer() {
         "Loading shared boards...",
       );
       //onsole.log(boards);
-      updateBoards(boards,false);
-      updateBoards(sharedBoards,true);
-      
+      updateBoards(boards, false);
+      updateBoards(sharedBoards, true);
     } catch (error) {
-      
       console.log(error);
-    }finally{
+    } finally {
       setIsReady(true);
     }
   }
@@ -119,40 +120,45 @@ export function useBoardsContainer() {
     isColumn: boolean,
     newAmount: number,
   ): void {
+    const updatingKey = isColumn ? "columnsAmount" : "cardsAmount";
+    let found = false;
 
-    let found: boolean = false;
-    const newOwnedBoards: BoardCard[] = ownedBoards.map(
-      (board: BoardCard): BoardCard => {
+    setOwnedBoards((prevOwned) => {
+      const updated = prevOwned.map((board) => {
         if (board.boardId === boardId) {
-          const updatingKey = isColumn ? "columnsAmount" : "cardsAmount";
-          board[updatingKey] = newAmount;
           found = true;
-          return board;
-        } else {
-          return board;
+          return { ...board, [updatingKey]: newAmount };
         }
-      },
-    );
+        return board;
+      });
+      return updated;
+    });
 
-    setOwnedBoards(newOwnedBoards);
-    if(found){
-      return;
+    if (!found) {
+      setSharedBoards((prevShared) =>
+        prevShared.map((board) =>
+          board.boardId === boardId
+            ? { ...board, [updatingKey]: newAmount }
+            : board,
+        ),
+      );
     }
+  }
 
-    const newSharedBoards: BoardCard[] = sharedBoards.map(
-      (board: BoardCard): BoardCard => {
-        if (board.boardId === boardId) {
-          const updatingKey = isColumn ? "columnsAmount" : "cardsAmount";
-          board[updatingKey] = newAmount;
-          found = true;
-          return board;
-        } else {
-          return board;
-        }
-      },
-    );
-    setSharedBoards(newSharedBoards);
-    
+  async function deleteBoard(boardId: string) {
+    try {
+      await sendApiRequest(
+        API_CALLS.deleteBoard.endpoint + boardId,
+        API_CALLS.deleteBoard.requestType,
+        null,
+        "deleting board...",
+      );
+      setOwnedBoards((prev) =>
+        prev.filter((board) => board.boardId !== boardId),
+      );
+    } catch (error) {
+      console.error("error while deleting board;", error);
+    }
   }
 
   async function init() {
@@ -172,6 +178,7 @@ export function useBoardsContainer() {
     setCreating,
     setCreatingBoardName,
     setCreateingBoardColorNum,
-    createBoard
+    createBoard,
+    deleteBoard,
   };
 }

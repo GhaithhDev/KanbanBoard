@@ -85,8 +85,6 @@ export function useBoard(receviedBoardId?: string) {
     }
   }
 
-  
-
   return {
     board,
     isReady,
@@ -98,6 +96,5 @@ export function useBoard(receviedBoardId?: string) {
     setIsCreating,
     setAddingUserText,
     addBoardToUser,
-    
   };
 }
